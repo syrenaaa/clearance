@@ -1,13 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFramework>net48</TargetFramework>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
+        <SLManaged Condition="'$(SLManaged)' == ''">$(SL_REFERENCES)</SLManaged>
+        <SLManaged Condition="'$(SLManaged)' == ''">$(HOME)/.var/app/com.valvesoftware.Steam/data/Steam/steamapps/common/SCP Secret Laboratory Dedicated Server/SCPSL_Data/Managed</SLManaged>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="LiteDB" Version="6.0.0-prerelease.322" />
+      <Reference Include="System.Net.Http" />
+      <Reference Include="Assembly-CSharp" HintPath="$(SLManaged)/Assembly-CSharp.dll" Private="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="LiteDB" Version="5.0.21" />
       <PackageReference Include="Northwood.LabAPI" Version="1.1.7" />
     </ItemGroup>
 
