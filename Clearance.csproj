@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="LiteDB" Version="6.0.0-prerelease.322" />
+      <PackageReference Include="Northwood.LabAPI" Version="1.1.7" />
+    </ItemGroup>
+
+</Project>

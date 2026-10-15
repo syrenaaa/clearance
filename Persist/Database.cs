@@ -1,0 +1,286 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using LiteDB;
+
+namespace Clearance.Persist;
+
+public class Database : IDisposable
+{
+    private readonly LiteDatabase _db;
+    private readonly object _gate = new(); // only for the read-modify-write bits
+
+    private ILiteCollection<PlayerRecord> Players => _db.GetCollection<PlayerRecord>("players");
+    private ILiteCollection<SteamSnapshot> Steam => _db.GetCollection<SteamSnapshot>("steam");
+    private ILiteCollection<AllowlistEntry> Allowlist => _db.GetCollection<AllowlistEntry>("allowlist");
+    private ILiteCollection<DecisionEntry> Decisions => _db.GetCollection<DecisionEntry>("decisions", BsonAutoId.Int32);
+    private ILiteCollection<Sponsorship> Sponsorships => _db.GetCollection<Sponsorship>("sponsorships", BsonAutoId.Int32);
+    private ILiteCollection<Punishment> Punishments => _db.GetCollection<Punishment>("punishments", BsonAutoId.Int32);
+    private ILiteCollection<Strike> Strikes => _db.GetCollection<Strike>("strikes", BsonAutoId.Int32);
+
+    public Database(string path)
+    {
+        if (Path.GetDirectoryName(path) is { Length: > 0 } dir)
+            Directory.CreateDirectory(dir);
+
+        _db = new LiteDatabase(path);
+
+        Decisions.EnsureIndex(x => x.UserId);
+        Sponsorships.EnsureIndex(x => x.SponsorId);
+        Sponsorships.EnsureIndex(x => x.GuestId);
+        Punishments.EnsureIndex(x => x.UserId);
+        Strikes.EnsureIndex(x => x.SponsorId);
+        Strikes.EnsureIndex(x => x.PunishmentId);
+    }
+
+    // ---- players ----
+
+    public void RecordJoin(string userId)
+    {
+        var id = Norm(userId);
+        lock (_gate)
+        {
+            var now = Now();
+            var p = Players.FindById(id) ?? new PlayerRecord { UserId = id, FirstSeen = now };
+            p.LastSeen = now;
+            p.Joins++;
+            Players.Upsert(p);
+        }
+    }
+
+    public void AddServerTime(string userId, long seconds)
+    {
+        if (seconds <= 0) return;
+        var id = Norm(userId);
+        lock (_gate)
+        {
+            var now = Now();
+            var p = Players.FindById(id) ?? new PlayerRecord { UserId = id, FirstSeen = now };
+            p.ServerSeconds += seconds;
+            p.LastSeen = now;
+            Players.Upsert(p);
+        }
+    }
+
+    public long GetServerSeconds(string userId) =>
+        Players.FindById(Norm(userId))?.ServerSeconds ?? 0;
+
+    // ---- steam cache ----
+
+    // null = not cached, or older than maxAge
+    public SteamSnapshot? GetCachedSteam(string userId, TimeSpan maxAge)
+    {
+        var s = Steam.FindById(Norm(userId));
+        return s is not null && s.FetchedAt >= Now() - (long)maxAge.TotalSeconds ? s : null;
+    }
+
+    public void SaveSteam(string userId, SteamSnapshot snapshot)
+    {
+        snapshot.UserId = Norm(userId);
+        snapshot.FetchedAt = Now();
+        Steam.Upsert(snapshot);
+    }
+
+    // ---- allowlist (staff overrides) ----
+
+    public void AddToAllowlist(string userId, string addedBy, string? reason) =>
+        Allowlist.Upsert(new AllowlistEntry { UserId = Norm(userId), AddedBy = addedBy, Reason = reason, AddedAt = Now() });
+
+    public bool RemoveFromAllowlist(string userId) => Allowlist.Delete(Norm(userId));
+
+    public bool IsAllowlisted(string userId) => Allowlist.FindById(Norm(userId)) is not null;
+
+    public List<AllowlistEntry> GetAllowlist() =>
+        Allowlist.Query().OrderByDescending(x => x.AddedAt).ToList();
+
+    // ---- decision log ----
+
+    public void LogDecision(string userId, int score, string outcome, string? breakdown, bool enforced) =>
+        Decisions.Insert(new DecisionEntry
+        {
+            UserId = Norm(userId), At = Now(), Score = score,
+            Outcome = outcome, Breakdown = breakdown, Enforced = enforced
+        });
+
+    // newest first; pass a userId to see one player
+    public List<DecisionEntry> GetRecentDecisions(int limit = 50, string? userId = null)
+    {
+        var q = Decisions.Query();
+        if (userId is not null)
+        {
+            var id = Norm(userId);
+            q = q.Where(x => x.UserId == id);
+        }
+        return q.OrderByDescending(x => x.Id).Limit(limit).ToList();
+    }
+
+    // ---- sponsorships ----
+
+    // window / caps / strike limit come from the plugin config. Error text is safe to show the player.
+    public (bool Ok, string? Error) TrySponsor(string sponsorId, string guestId, TimeSpan window,
+        int maxActive, int maxStrikeWeight, TimeSpan strikeDecay)
+    {
+        var sponsor = Norm(sponsorId);
+        var guest = Norm(guestId);
+
+        lock (_gate)
+        {
+            var now = Now();
+
+            if (sponsor == guest)
+                return (false, "You can't sponsor yourself.");
+            if (ActiveSponsorship(sponsor, now) is not null)
+                return (false, "You're still inside someone else's sponsorship window, so you can't sponsor anyone yet.");
+            if (StrikeWeight(sponsor, strikeDecay, now) >= maxStrikeWeight)
+                return (false, "You have too many recent strikes to sponsor anyone right now.");
+            if (ActiveGuests(sponsor, now).Count() >= maxActive)
+                return (false, "All of your sponsor slots are in use.");
+            if (ActiveSponsorship(guest, now) is not null)
+                return (false, "That player already has a sponsor.");
+
+            Sponsorships.Insert(new Sponsorship
+            {
+                SponsorId = sponsor, GuestId = guest,
+                CreatedAt = now, ExpiresAt = now + (long)window.TotalSeconds
+            });
+            return (true, null);
+        }
+    }
+
+    // punishments after a revoke don't strike the sponsor
+    public bool RevokeSponsorship(string sponsorId, string guestId)
+    {
+        var sponsor = Norm(sponsorId);
+        var guest = Norm(guestId);
+        lock (_gate)
+        {
+            var now = Now();
+            var s = Sponsorships.Query()
+                .Where(x => x.SponsorId == sponsor && x.GuestId == guest && x.RevokedAt == 0 && x.ExpiresAt > now)
+                .FirstOrDefault();
+            if (s is null) return false;
+
+            s.RevokedAt = now;
+            Sponsorships.Update(s);
+            return true;
+        }
+    }
+
+    // null = this guest has no active sponsor
+    public Sponsorship? GetActiveSponsorship(string guestId) => ActiveSponsorship(Norm(guestId), Now());
+
+    public List<Sponsorship> GetActiveGuests(string sponsorId) => ActiveGuests(Norm(sponsorId), Now()).ToList();
+
+    // ---- punishments + strikes ----
+
+    // Record a confirmed ban (not a kick). If the player has an active sponsor, the sponsor gets a strike
+    // with weight = severity. Keep punishment.Id if you want to pardon it later.
+    public (Punishment punishment, Strike? strike) RecordPunishment(string userId, int severity, string? reason, string issuedBy)
+    {
+        var id = Norm(userId);
+        lock (_gate)
+        {
+            using var tx = new Tx(_db);
+            var now = Now();
+            var punishment = new Punishment
+            {
+                UserId = id, At = now, Severity = Math.Max(1, severity),
+                Reason = reason, IssuedBy = issuedBy
+            };
+            punishment.Id = Punishments.Insert(punishment).AsInt32;
+
+            if (ActiveSponsorship(id, now) is not { } sponsorship)
+            {
+                tx.Commit();
+                return (punishment, null);
+            }
+
+            var strike = new Strike
+            {
+                SponsorId = sponsorship.SponsorId, GuestId = id,
+                SponsorshipId = sponsorship.Id, PunishmentId = punishment.Id,
+                Weight = punishment.Severity, CreatedAt = now
+            };
+            strike.Id = Strikes.Insert(strike).AsInt32;
+            tx.Commit();
+            return (punishment, strike);
+        }
+    }
+
+    // reverses the strikes the punishment caused; returns how many, or -1 if it doesn't exist
+    public int PardonPunishment(int punishmentId)
+    {
+        lock (_gate)
+        {
+            using var tx = new Tx(_db);
+            if (Punishments.FindById(punishmentId) is not { } p) return -1;
+
+            var now = Now();
+            if (p.PardonedAt == 0)
+            {
+                p.PardonedAt = now;
+                Punishments.Update(p);
+            }
+
+            var open = Strikes.Query().Where(x => x.PunishmentId == punishmentId && x.PardonedAt == 0).ToList();
+            foreach (var s in open)
+            {
+                s.PardonedAt = now;
+                Strikes.Update(s);
+            }
+            tx.Commit();
+            return open.Count;
+        }
+    }
+
+    // strikes that still count: not pardoned, not older than the decay
+    public int GetActiveStrikeWeight(string sponsorId, TimeSpan decay) =>
+        StrikeWeight(Norm(sponsorId), decay, Now());
+
+    // ---- helpers ----
+
+    private Sponsorship? ActiveSponsorship(string guest, long now) =>
+        Sponsorships.Query()
+            .Where(x => x.GuestId == guest && x.RevokedAt == 0 && x.ExpiresAt > now)
+            .FirstOrDefault();
+
+    private ILiteQueryable<Sponsorship> ActiveGuests(string sponsor, long now) =>
+        Sponsorships.Query()
+            .Where(x => x.SponsorId == sponsor && x.RevokedAt == 0 && x.ExpiresAt > now);
+
+    private int StrikeWeight(string sponsor, TimeSpan decay, long now)
+    {
+        var cutoff = now - (long)decay.TotalSeconds;
+        return Strikes.Query()
+            .Where(x => x.SponsorId == sponsor && x.PardonedAt == 0 && x.CreatedAt >= cutoff)
+            .ToList()
+            .Sum(x => x.Weight);
+    }
+
+    private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    // "76561198439176472@steam": trim + lowercase so "@Steam" can't make duplicates
+    static string Norm(string id) =>
+        string.IsNullOrWhiteSpace(id) ? throw new ArgumentException("empty user id") : id.Trim().ToLowerInvariant();
+
+    public void Dispose() => _db.Dispose();
+
+    // rolls back on Dispose unless Commit() was called, so exceptions and early returns undo partial writes
+    private sealed class Tx(LiteDatabase db) : IDisposable
+    {
+        private readonly bool _owns = db.BeginTrans();
+        private bool _done;
+
+        public void Commit()
+        {
+            if (_owns && !_done) db.Commit();
+            _done = true;
+        }
+
+        public void Dispose()
+        {
+            if (_owns && !_done) db.Rollback();
+        }
+    }
+}
