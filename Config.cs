@@ -11,6 +11,7 @@ public class ClearanceConfig
     public int SteamCacheHours { get; set; } = 12;
     public int SteamTimeoutSeconds { get; set; } = 5;     // pre-auth waits this long for steam
     public bool AllowWhenSteamIsDown { get; set; } = true; // steam failed/timed out: true = pass (logged as "steam-error")
+    public bool AllowNewWhenSteamIsDown { get; set; } = true; // false = players who never joined before get rejected
 
     // score: each thing gives points, up to a cap
     public double HoursWeight { get; set; } = 4;    // points = weight * sqrt(game hours)
@@ -43,4 +44,5 @@ public class ClearanceConfig
     // kick messages. {score} {needed} {breakdown} are templates
     public string KickMessage { get; set; } = "clearance denied (score {score}, need {needed}). {breakdown}";
     public string BanKickMessage { get; set; } = "clearance denied: your steam account has a recent VAC or game ban.";
+    public string SteamDownKickMessage { get; set; } = "steam is not responding and we can't check new players right now. try again later.";
 }

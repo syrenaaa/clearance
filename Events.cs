@@ -80,12 +80,34 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
                     {
                         db.LogDecision(id, 0, "steam-error", ex.GetType().Name, false);
                         _notes.Enqueue(($"Clearance: steam lookup failed for {id} ({ex.GetType().Name})", false));
-                        if (cfg.AllowWhenSteamIsDown)
+
+                        // an old lookup beats no lookup, so score with it
+                        steam = db.GetLastSteam(id);
+                        if (steam is null)
                         {
-                            db.RecordJoin(id);
-                            return;
+                            if (!cfg.AllowNewWhenSteamIsDown && !db.HasJoinedBefore(id))
+                            {
+                                db.LogDecision(id, 0, "SteamDownNew", null, cfg.Enforce);
+                                _notes.Enqueue(($"Clearance: {id} is new and steam is down{(cfg.Enforce ? " [rejected]" : "")}", false));
+                                if (cfg.Enforce)
+                                {
+                                    ev.RejectCustom(cfg.SteamDownKickMessage);
+                                    return;
+                                }
+                            }
+
+                            if (cfg.AllowWhenSteamIsDown)
+                            {
+                                db.RecordJoin(id);
+                                return;
+                            }
+                            // otherwise fall through and score them like a private profile
                         }
-                        // otherwise fall through and score them like a private profile
+                        else
+                        {
+                            var age = TimeSpan.FromSeconds(Now() - steam.FetchedAt);
+                            _notes.Enqueue(($"Clearance: using {age.TotalHours:0}h old steam data for {id}", false));
+                        }
                     }
                 }
             }

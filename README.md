@@ -24,8 +24,13 @@ the score decides one of three things:
 every decision gets saved in the database with a breakdown of the points so you
 can see why someone was denied.
 
-if steam is down or times out, the player is let in by default
-(`AllowWhenSteamIsDown`).
+if steam is down or times out:
+
+1. if the player was looked up before, the old cached data is used, no matter
+   how old
+2. if not, and they never joined before, `AllowNewWhenSteamIsDown` decides
+   (`false` = reject them with `SteamDownKickMessage`)
+3. otherwise they're let in by default (`AllowWhenSteamIsDown`)
 
 ## score calculation
 
@@ -65,14 +70,15 @@ too. older bans only get the -30.
 
 **general**
 
-| option                 | default  | what it does                                     |
-| ---------------------- | -------- | ------------------------------------------------ |
-| `Enforce`              | `false`  | `false` = log only, nobody is kicked             |
-| `SteamApiKey`          | `""`     | get one at https://steamcommunity.com/dev/apikey |
-| `ScpslAppId`           | `700330` | steam app id used to find scp:sl hours           |
-| `SteamCacheHours`      | `12`     | how long to reuse a steam lookup                 |
-| `SteamTimeoutSeconds`  | `5`      | how long a join waits for steam. keep this low   |
-| `AllowWhenSteamIsDown` | `true`   | let players in if the steam lookup fails         |
+| option                    | default  | what it does                                            |
+| ------------------------- | -------- | ------------------------------------------------------- |
+| `Enforce`                 | `false`  | `false` = log only, nobody is kicked                    |
+| `SteamApiKey`             | `""`     | get one at https://steamcommunity.com/dev/apikey        |
+| `ScpslAppId`              | `700330` | steam app id used to find scp:sl hours                  |
+| `SteamCacheHours`         | `12`     | how long to reuse a steam lookup                        |
+| `SteamTimeoutSeconds`     | `5`      | how long a join waits for steam. keep this low          |
+| `AllowWhenSteamIsDown`    | `true`   | let players in if the steam lookup fails                |
+| `AllowNewWhenSteamIsDown` | `true`   | `false` = reject first-time players while steam is down |
 
 **score**
 
@@ -106,10 +112,11 @@ too. older bans only get the -30.
 
 **messages**
 
-| option           | default                                                              |
-| ---------------- | -------------------------------------------------------------------- |
-| `KickMessage`    | `clearance denied (score {score}, need {needed}). {breakdown}`       |
-| `BanKickMessage` | `clearance denied: your steam account has a recent VAC or game ban.` |
+| option                 | default                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `KickMessage`          | `clearance denied (score {score}, need {needed}). {breakdown}`                       |
+| `BanKickMessage`       | `clearance denied: your steam account has a recent VAC or game ban.`                 |
+| `SteamDownKickMessage` | `steam is not responding and we can't check new players right now. try again later.` |
 
 `{score}`, `{needed}` and `{breakdown}` are templates and get filled in.
 

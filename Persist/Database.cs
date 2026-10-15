@@ -66,14 +66,16 @@ public class Database : IDisposable
     public long GetServerSeconds(string userId) =>
         Players.FindById(Norm(userId))?.ServerSeconds ?? 0;
 
+    public bool HasJoinedBefore(string userId) => Players.FindById(Norm(userId)) is { Joins: > 0 };
+
     // ---- steam cache ----
 
     // null = not cached, or older than maxAge
-    public SteamSnapshot? GetCachedSteam(string userId, TimeSpan maxAge)
-    {
-        var s = Steam.FindById(Norm(userId));
-        return s is not null && s.FetchedAt >= Now() - (long)maxAge.TotalSeconds ? s : null;
-    }
+    public SteamSnapshot? GetCachedSteam(string userId, TimeSpan maxAge) =>
+        GetLastSteam(userId) is { } s && s.FetchedAt >= Now() - (long)maxAge.TotalSeconds ? s : null;
+
+    // any age, for when steam is down
+    public SteamSnapshot? GetLastSteam(string userId) => Steam.FindById(Norm(userId));
 
     public void SaveSteam(string userId, SteamSnapshot snapshot)
     {
