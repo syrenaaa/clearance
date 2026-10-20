@@ -68,6 +68,16 @@ public class Database : IDisposable
 
     public bool HasJoinedBefore(string userId) => Players.FindById(Norm(userId)) is { Joins: > 0 };
 
+    // do not track: drop everything that isn't moderation. bans, strikes, sponsorships and
+    // the allowlist stay, those are staff actions
+    public void Forget(string userId)
+    {
+        var id = Norm(userId);
+        Players.Delete(id);
+        Steam.Delete(id);
+        Decisions.DeleteMany(x => x.UserId == id);
+    }
+
     // ---- steam cache ----
 
     // null = not cached, or older than maxAge
@@ -263,7 +273,7 @@ public class Database : IDisposable
     private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     // "76561198439176472@steam": trim + lowercase so "@Steam" can't make duplicates
-    static string Norm(string id) =>
+    internal static string Norm(string id) =>
         string.IsNullOrWhiteSpace(id) ? throw new ArgumentException("empty user id") : id.Trim().ToLowerInvariant();
 
     public void Dispose() => _db.Dispose();

@@ -160,6 +160,18 @@ means "not set" for `RevokedAt` / `PardonedAt`.
 | `punishments`  | bans: user, severity, reason, issued by, pardoned                                                               |
 | `strikes`      | sponsor, guest, which sponsorship and punishment caused it, weight, pardoned                                    |
 
+### do not track
+
+players with do not track on are still checked when they join, but when they
+leave their `players`, `steam` and `decisions` entries are deleted. the game
+only tells the server about do not track after pre-auth, so the data exists
+while they're online. `allowlist`, `sponsorships`, `punishments` and `strikes`
+are kept, those are moderation.
+
+their steam lookup is kept in memory only (for `SteamCacheHours`, gone on
+restart), so rejoining over and over can't use up the steam api key. do not
+track players never earn points for time on the server.
+
 ## install
 
 1. build the project

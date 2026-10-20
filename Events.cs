@@ -18,6 +18,7 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
 
     private readonly Dictionary<Player, long> _joinedAt = [];
     private readonly ConcurrentQueue<(string Text, bool Staff)> _notes = new();
+    private readonly ConcurrentDictionary<string, SteamSnapshot> _dntStore = new();
 
     private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -40,7 +41,7 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
         FlushNotes();
     }
 
-    // ---- the actual gate (network thread) --------------------------------
+    // ---- network thread --------------------------------
     // PreAuthenticating runs on a different thread with no apis. it queues notes instead
     // and gets printed from main thread
     private void OnPreAuthenticating(PlayerPreAuthenticatingEventArgs ev)
@@ -66,7 +67,7 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
             SteamSnapshot? steam = null;
             if (UserIds.IsSteam(id)) // discord and other ids have nothing to look up
             {
-                steam = db.GetCachedSteam(id, TimeSpan.FromHours(cfg.SteamCacheHours));
+                steam = db.GetCachedSteam(id, TimeSpan.FromHours(cfg.SteamCacheHours)) ?? DntSteam(id);
                 if (steam is null)
                 {
                     try
@@ -165,7 +166,25 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
         _joinedAt.Remove(player);
         // UserId can still be empty right at join, so it's read here instead
         var id = player.UserId;
-        if (!string.IsNullOrWhiteSpace(id)) db.AddServerTime(id, Now() - since);
+        if (string.IsNullOrWhiteSpace(id)) return;
+
+        // do not track only arrives with authentication, after pre-auth already stored things.
+        // so the session is checked like everyone else's and wiped once they leave
+        if (player.DoNotTrack)
+        {
+            if (db.GetLastSteam(id) is { } steam) _dntStore[steam.UserId] = steam;
+            db.Forget(id);
+        }
+        else db.AddServerTime(id, Now() - since);
+    }
+
+    // called from pre-auth too, so only touches the concurrent dictionary
+    private SteamSnapshot? DntSteam(string id)
+    {
+        var oldest = Now() - cfg.SteamCacheHours * 3600L;
+        foreach (var old in _dntStore.Where(x => x.Value.FetchedAt < oldest).ToList())
+            _dntStore.TryRemove(old.Key, out _);
+        return _dntStore.TryGetValue(Database.Norm(id), out var s) ? s : null;
     }
 
     private void FlushNotes()
