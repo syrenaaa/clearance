@@ -12,7 +12,7 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
 {
     public override string Name => "Clearance";
     public override string Description => "Steam trust score screening with sponsors.";
-    public override string Author => "~furry";
+    public override string Author => "syrena";
     public override Version Version => new(1, 0, 0);
     public override Version RequiredApiVersion => new(LabApiProperties.CompiledVersion);
 
