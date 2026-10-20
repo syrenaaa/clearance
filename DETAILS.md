@@ -52,7 +52,6 @@ every part gives points up to a cap. sum, round, and floor at 0.
 - **new account**: `-NewAccountPenalty` (10) if the account is younger than
   `NewAccountDays` (30)
 - **vac / game ban**: `-BanPenalty` (30), fading for old bans (see below)
-- **discord account**: `-DiscordPenalty` (10), see below
 
 **instant deny:** a vac or game ban newer than `RecentBanDays` (365) is an
 instant deny, no matter the score. a ban with an unknown date counts as recent
@@ -66,8 +65,10 @@ years ago is -15, 3 years -7.5, 4 years -3.75.
 
 - **`@steam`** ids get the full score
 - **`@discord`** ids have no steam data, but discord ids are snowflakes and the
-  account creation time is inside the id. so they get account age points, the
-  new-account penalty, and `-DiscordPenalty`. no hours, level or library
+  account creation time is inside the id. so they get account age points and
+  the new-account penalty, like a steam account with everything else hidden.
+  there's no extra penalty for using discord: the community server guidelines
+  (8.6) forbid treating discord logins differently from steam
 - **`@northwood`** ids are northwood staff and always get in, no score
 - **anything else** is scored like a private profile. put them on the allowlist
   if u need them in

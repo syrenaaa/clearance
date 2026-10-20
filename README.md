@@ -13,8 +13,7 @@ steam account:
 
 - **points** for scp:sl hours, account age, steam level, library size, and time
   played on your server
-- **penalties** for private profiles, brand new accounts, discord accounts and
-  vac / game bans (old bans fade, recent ones are an instant deny)
+- **penalties** for private profiles, brand new accounts and vac / game bans (old bans fade, recent ones are an instant deny)
 
 a high score gets in, a middle score gets in but staff get a broadcast, and a
 low score is rejected. if steam is down, the last lookup is used, or the player

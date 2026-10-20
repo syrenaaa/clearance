@@ -33,7 +33,6 @@ every option in `config.yml`. how they fit together is in [DETAILS.md](DETAILS.m
 | `LibraryCap`            | `15`    | max points from library                  |
 | `ServerHoursCap`        | `30`    | max points from time on your server      |
 | `PrivateProfilePenalty` | `5`     | private profile                          |
-| `DiscordPenalty`        | `10`    | discord accounts                         |
 | `NewAccountDays`        | `30`    | accounts younger than this count as new  |
 | `NewAccountPenalty`     | `10`    | new account                              |
 | `BanPenalty`            | `30`    | any vac / game ban                       |

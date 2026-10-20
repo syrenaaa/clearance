@@ -44,8 +44,8 @@ public static class Score
         }
         else if (discordCreated is not null)
         {
-            // only the account age is known, no hours / level / library
-            Add("discord", -cfg.DiscordPenalty);
+            // only the account age is known, so it's scored like a steam account with everything but
+            // the age hidden. no extra penalty: CSG 8.6 forbids treating discord logins differently
             Age(discordCreated);
         }
         else
