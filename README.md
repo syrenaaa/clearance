@@ -50,12 +50,16 @@ every part gives points up to a cap. sum, round, and floor at 0.
   are all hidden, so only the server-time part can score
 - **new account**: `-NewAccountPenalty` (10) if the account is younger than
   `NewAccountDays` (30)
-- **vac / game ban**: `-BanPenalty` (30)
+- **vac / game ban**: `-BanPenalty` (30), fading for old bans (see below)
 - **discord account**: `-DiscordPenalty` (10), see below
 
 **instant deny:** a vac or game ban newer than `RecentBanDays` (365) is an
 instant deny, no matter the score. a ban with an unknown date counts as recent
-too. older bans only get the -30.
+too.
+
+older bans don't deny, and their penalty fades: it halves every
+`BanHalfLifeDays` (365) after `RecentBanDays`. with the defaults a ban from 2
+years ago is -15, 3 years -7.5, 4 years -3.75.
 
 ### discord and other ids
 
@@ -98,6 +102,7 @@ too. older bans only get the -30.
 | `NewAccountPenalty`     | `10`    | new account                              |
 | `BanPenalty`            | `30`    | any vac / game ban                       |
 | `RecentBanDays`         | `365`   | bans newer than this are an instant deny |
+| `BanHalfLifeDays`       | `365`   | older bans: penalty halves this often    |
 | `AllowScore`            | `50`    | this score or more = allow               |
 | `FlagScore`             | `30`    | this score or more = flag, below = deny  |
 

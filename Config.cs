@@ -30,6 +30,7 @@ public class ClearanceConfig
     public int NewAccountPenalty { get; set; } = 10;
     public int BanPenalty { get; set; } = 30;
     public int RecentBanDays { get; set; } = 365;   // vac/game ban newer than this = deny
+    public int BanHalfLifeDays { get; set; } = 365; // older bans: penalty halves every this many days
 
     // tiers: >=AllowScore => pass, FlagScore..AllowScore => flag staff, <FlagScore => deny
     public int AllowScore { get; set; } = 50;

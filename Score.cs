@@ -58,9 +58,17 @@ public static class Score
         // ban info comes from a different steam endpoint that works for private profiles too
         if (steam is { HasBan: true })
         {
-            Add("ban", -cfg.BanPenalty);
             if (steam.DaysSinceLastBan is not { } days || days <= cfg.RecentBanDays)
+            {
+                Add("ban", -cfg.BanPenalty);
                 instantDeny = true;
+            }
+            else
+            {
+                // people change: past the recent window the penalty halves every BanHalfLifeDays
+                var halvings = (days - cfg.RecentBanDays) / (double)Math.Max(1, cfg.BanHalfLifeDays);
+                Add("ban", -cfg.BanPenalty * Math.Pow(0.5, halvings));
+            }
         }
 
         var score = Math.Max(0, (int)Math.Round(total));
