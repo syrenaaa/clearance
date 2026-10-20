@@ -11,6 +11,9 @@
     <ItemGroup>
       <Reference Include="System.Net.Http" />
       <Reference Include="Assembly-CSharp" HintPath="$(SLManaged)/Assembly-CSharp.dll" Private="false" />
+      <Reference Include="CommandSystem.Core" HintPath="$(SLManaged)/CommandSystem.Core.dll" Private="false" />
+      <Reference Include="Mirror" HintPath="$(SLManaged)/Mirror.dll" Private="false" />
+      <Reference Include="UnityEngine.CoreModule" HintPath="$(SLManaged)/UnityEngine.CoreModule.dll" Private="false" />
     </ItemGroup>
 
     <ItemGroup>

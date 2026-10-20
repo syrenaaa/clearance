@@ -16,6 +16,10 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
     public override Version Version => new(1, 0, 0);
     public override Version RequiredApiVersion => new(LabApiProperties.CompiledVersion);
 
+    // commands are created by the game, so they reach the db through here
+    internal static ClearancePlugin? Instance { get; private set; }
+    internal Database? Db => _db;
+
     private Database? _db;
     private ClearanceEvents? _events;
 
@@ -28,6 +32,7 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
 
         _events = new ClearanceEvents(_db, Config!);
         _events.Register();
+        Instance = this;
         
         Logger.Info("Clearance: enabled.");
 
@@ -37,6 +42,7 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
 
     public override void Disable()
     {
+        Instance = null;
         _events?.Unregister(); // saves play time as well
         _events = null;
 

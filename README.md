@@ -141,6 +141,30 @@ rules for sponsoring:
 revoking a sponsorship stops future strikes. punishments after a revoke don't
 count.
 
+## commands
+
+ids can be a full user id (`76561198000000000@steam`), a bare steam64 id, or the
+number of a player who is on the server.
+
+**players** (in the `~` console)
+
+| command           | what it does                            |
+| ----------------- | --------------------------------------- |
+| `.sponsor <id>`   | sponsor a guest                         |
+| `.unsponsor <id>` | stop sponsoring them                    |
+| `.guests`         | who you're sponsoring, and your strikes |
+
+**staff** (in RA or the server console, `cl` works as a short form)
+
+| command                         | permission                  | what it does                                                    |
+| ------------------------------- | --------------------------- | --------------------------------------------------------------- |
+| `clearance check <id>`          | `PlayerSensitiveDataAccess` | allowlist, sponsor, guests, strikes, bans, recent checks        |
+| `clearance allowlist`           | `PlayerSensitiveDataAccess` | list the allowlist                                              |
+| `clearance allow <id> [reason]` | `LongTermBanning`           | let them skip the check                                         |
+| `clearance unallow <id>`        | `LongTermBanning`           | remove them from the allowlist                                  |
+| `clearance revoke <guest id>`   | `LongTermBanning`           | end a guest's sponsorship                                       |
+| `clearance pardon <ban number>` | `LongTermBanning`           | pardon a ban (number from `check`), undoes the sponsor's strike |
+
 ## database
 
 clearance uses [LiteDB](https://www.litedb.org/).
@@ -184,6 +208,4 @@ track players never earn points for time on the server.
 
 ## todos
 
-- [ ] commands: sponsor, revoke, allowlist add/remove, pardon, show a player's
-      score
 - [ ] discord integration

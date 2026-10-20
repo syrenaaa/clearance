@@ -186,6 +186,12 @@ public class Database : IDisposable
 
     // ---- punishments + strikes ----
 
+    public List<Punishment> GetPunishments(string userId)
+    {
+        var id = Norm(userId);
+        return Punishments.Query().Where(x => x.UserId == id).OrderByDescending(x => x.Id).ToList();
+    }
+
     // Record a confirmed ban (not a kick). If the player has an active sponsor, the sponsor gets a strike
     // with weight = severity. Keep punishment.Id if you want to pardon it later.
     public (Punishment punishment, Strike? strike) RecordPunishment(string userId, int severity, string? reason, string issuedBy)
