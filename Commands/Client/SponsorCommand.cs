@@ -23,7 +23,8 @@ public class SponsorCommand : ICommand
         }
 
         var (ok, error) = db.TrySponsor(me.UserId, guest, TimeSpan.FromDays(cfg.SponsorWindowDays),
-            cfg.MaxActiveGuests, cfg.MaxStrikeWeight, TimeSpan.FromDays(cfg.StrikeDecayDays));
+            cfg.MaxActiveGuests, cfg.MaxStrikeWeight, TimeSpan.FromDays(cfg.StrikeDecayDays),
+            TimeSpan.FromHours(cfg.SponsorMinHours));
         response = ok
             ? $"you're sponsoring {guest} for {cfg.SponsorWindowDays} days. if they get banned in that time, you get a strike."
             : error!;

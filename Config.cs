@@ -37,6 +37,7 @@ public class ClearanceConfig
 
     // sponsors
     public int SponsorWindowDays { get; set; } = 30;
+    public double SponsorMinHours { get; set; } = 5;  // hours played here before you can sponsor
     public int MaxActiveGuests { get; set; } = 3;
     public int MaxStrikeWeight { get; set; } = 3;
     public int StrikeDecayDays { get; set; } = 30;

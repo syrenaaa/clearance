@@ -106,6 +106,7 @@ too. older bans only get the -30.
 | option              | default | what it does                                  |
 | ------------------- | ------- | --------------------------------------------- |
 | `SponsorWindowDays` | `30`    | how long a sponsorship lasts                  |
+| `SponsorMinHours`   | `5`     | hours played here before you can sponsor      |
 | `MaxActiveGuests`   | `3`     | guests one sponsor can have at once           |
 | `MaxStrikeWeight`   | `3`     | sponsors at or over this can't sponsor anyone |
 | `StrikeDecayDays`   | `30`    | strikes stop counting after this long         |
@@ -134,6 +135,8 @@ rules for sponsoring:
 
 - not yourself
 - you can't sponsor anyone while u are someone else's guest
+- you need `SponsorMinHours` played on this server (counted when you leave, so
+  the current session doesn't count yet)
 - you need free slots (`MaxActiveGuests`)
 - you need to be under the strike limit
 - the guest can't already have a sponsor

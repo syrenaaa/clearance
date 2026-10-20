@@ -131,7 +131,7 @@ public class Database : IDisposable
 
     // window / caps / strike limit come from the plugin config. Error text is safe to show the player.
     public (bool Ok, string? Error) TrySponsor(string sponsorId, string guestId, TimeSpan window,
-        int maxActive, int maxStrikeWeight, TimeSpan strikeDecay)
+        int maxActive, int maxStrikeWeight, TimeSpan strikeDecay, TimeSpan minPlayTime)
     {
         var sponsor = Norm(sponsorId);
         var guest = Norm(guestId);
@@ -142,6 +142,9 @@ public class Database : IDisposable
 
             if (sponsor == guest)
                 return (false, "You can't sponsor yourself.");
+            // keeps fresh accounts from vouching for their own alts
+            if ((Players.FindById(sponsor)?.ServerSeconds ?? 0) < (long)minPlayTime.TotalSeconds)
+                return (false, $"You need {minPlayTime.TotalHours:0.#} hours played here before you can sponsor anyone.");
             if (ActiveSponsorship(sponsor, now) is not null)
                 return (false, "You're still inside someone else's sponsorship window, so you can't sponsor anyone yet.");
             if (StrikeWeight(sponsor, strikeDecay, now) >= maxStrikeWeight)
