@@ -1,7 +1,6 @@
 # clearance
 
-a steam-based trust scoring plugin for scp:sl servers (labapi). it keeps fresh
-alts and banned accounts out, while letting real players vouch for friends.
+a steam-based trust scoring plugin for scp:sl servers (labapi).
 
 the plugin defaults in **log-only mode**: every join is scored and logged, but nobody is
 kicked until you turn `Enforce` on.
