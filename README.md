@@ -31,7 +31,8 @@ set `DiscordWebhookUrl` and denies, flags, strikes and staff actions get posted
 to a **discord** channel.
 
 players with **do not track** on are still checked, but their tracking data is
-deleted when they leave.
+deleted when they leave. they get a hint that `.trackme` lets their play time
+count, if they want.
 
 you can read more details in [DETAILS.md](DETAILS.md),
 and all the config option is specified in [CONFIG.md](CONFIG.md).

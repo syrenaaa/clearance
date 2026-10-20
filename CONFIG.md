@@ -4,15 +4,16 @@ every option in `config.yml`. how they fit together is in [DETAILS.md](DETAILS.m
 
 ## general
 
-| option                    | default  | what it does                                            |
-| ------------------------- | -------- | ------------------------------------------------------- |
-| `Enforce`                 | `false`  | `false` = log only, nobody is kicked                    |
-| `SteamApiKey`             | `""`     | get one at https://steamcommunity.com/dev/apikey        |
-| `ScpslAppId`              | `700330` | steam app id used to find scp:sl hours                  |
-| `SteamCacheHours`         | `12`     | how long to reuse a steam lookup                        |
-| `SteamTimeoutSeconds`     | `5`      | how long a join waits for steam. keep this low          |
-| `AllowWhenSteamIsDown`    | `true`   | let players in if the steam lookup fails                |
-| `AllowNewWhenSteamIsDown` | `true`   | `false` = reject first-time players while steam is down |
+| option                    | default  | what it does                                             |
+| ------------------------- | -------- | -------------------------------------------------------- |
+| `Enforce`                 | `false`  | `false` = log only, nobody is kicked                     |
+| `SteamApiKey`             | `""`     | get one at https://steamcommunity.com/dev/apikey         |
+| `ScpslAppId`              | `700330` | steam app id used to find scp:sl hours                   |
+| `SteamCacheHours`         | `12`     | how long to reuse a steam lookup                         |
+| `SteamTimeoutSeconds`     | `5`      | how long a join waits for steam. keep this low           |
+| `AllowWhenSteamIsDown`    | `true`   | let players in if the steam lookup fails                 |
+| `AllowNewWhenSteamIsDown` | `true`   | `false` = reject first-time players while steam is down  |
+| `DntConsentHint`          | `true`   | hint do not track players about `.trackme` after joining |
 
 ## discord
 
@@ -53,10 +54,11 @@ every option in `config.yml`. how they fit together is in [DETAILS.md](DETAILS.m
 
 ## messages
 
-| option                 | default                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| `KickMessage`          | `clearance denied (score {score}, need {needed}). {breakdown}`                       |
-| `BanKickMessage`       | `clearance denied: your steam account has a recent VAC or game ban.`                 |
-| `SteamDownKickMessage` | `steam is not responding and we can't check new players right now. try again later.` |
+| option                  | default                                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `KickMessage`           | `clearance denied (score {score}, need {needed}). {breakdown}`                                                                                          |
+| `BanKickMessage`        | `clearance denied: your steam account has a recent VAC or game ban.`                                                                                    |
+| `SteamDownKickMessage`  | `steam is not responding and we can't check new players right now. try again later.`                                                                    |
+| `DntConsentHintMessage` | `this server respects your Do Not Track setting.\nif you want your play time here to count towards your trust score, type .trackme in the console (~).` |
 
 `{score}`, `{needed}` and `{breakdown}` are templates and get filled in.

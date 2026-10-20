@@ -66,6 +66,13 @@ public class Punishment
     public long PardonedAt { get; set; }
 }
 
+// a do not track player's explicit opt-in (CSG 8.3.2). GivenAt is the proof
+public class TrackingConsent
+{
+    [BsonId] public string UserId { get; set; } = "";
+    public long GivenAt { get; set; }
+}
+
 public class Strike
 {
     public int Id { get; set; }

@@ -42,6 +42,11 @@ public class ClearanceConfig
     public int MaxStrikeWeight { get; set; } = 3;
     public int StrikeDecayDays { get; set; } = 30;
 
+    // do not track players get a hint after joining that .trackme lets their play time count
+    public bool DntConsentHint { get; set; } = true;
+    public string DntConsentHintMessage { get; set; } =
+        "this server respects your Do Not Track setting.\nif you want your play time here to count towards your trust score, type .trackme in the console (~).";
+
     // discord: webhook url from the channel's integrations settings. empty = off
     public string DiscordWebhookUrl { get; set; } = "";
 

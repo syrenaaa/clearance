@@ -103,11 +103,13 @@ number of a player who is on the server.
 
 **players** (in the `~` console)
 
-| command           | what it does                            |
-| ----------------- | --------------------------------------- |
-| `.sponsor <id>`   | sponsor a guest                         |
-| `.unsponsor <id>` | stop sponsoring them                    |
-| `.guests`         | who you're sponsoring, and your strikes |
+| command           | what it does                                       |
+| ----------------- | -------------------------------------------------- |
+| `.sponsor <id>`   | sponsor a guest                                    |
+| `.unsponsor <id>` | stop sponsoring them                               |
+| `.guests`         | who you're sponsoring, and your strikes            |
+| `.trackme`        | do not track players: save my play time anyway     |
+| `.untrackme`      | take back `.trackme` and delete my saved play time |
 
 **staff** (in RA or the server console, `cl` works as a short form)
 
@@ -179,6 +181,7 @@ means "not set" for `RevokedAt` / `PardonedAt`.
 | `sponsorships` | sponsor, guest, created, expires, revoked                                                                       |
 | `punishments`  | bans: user, severity, reason, issued by, pardoned                                                               |
 | `strikes`      | sponsor, guest, which sponsorship and punishment caused it, weight, pardoned                                    |
+| `consents`     | do not track players who used `.trackme`: user id, when                                                         |
 
 ### do not track
 
@@ -189,5 +192,18 @@ while they're online. `allowlist`, `sponsorships`, `punishments` and `strikes`
 are kept, those are moderation.
 
 their steam lookup is kept in memory only (for `SteamCacheHours`, gone on
-restart), so rejoining over and over can't use up the steam api key. do not
-track players never earn points for time on the server.
+restart), so rejoining over and over can't use up the steam api key.
+
+without their play time, do not track players can't earn server points or
+sponsor. the community server guidelines (8.3.1) forbid punishing players for
+using do not track, so they can opt in instead (8.3.2):
+
+- about 5 seconds after joining, do not track players get a hint
+  (`DntConsentHintMessage`) that `.trackme` lets their play time count. it's
+  optional, nothing happens if they ignore it
+- `.trackme` saves a consent record (user id + time, in `consents`) as proof.
+  from then on they're tracked like everyone else
+- `.untrackme` deletes the consent record and their tracked data
+
+there's no "rejoin means consent": the guidelines want explicit, demonstrable
+consent, and players are kicked before the game reports do not track anyway.

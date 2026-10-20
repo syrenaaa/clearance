@@ -10,6 +10,7 @@ using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Events.Handlers;
 using LabApi.Features.Console;
 using LabApi.Features.Wrappers;
+using MEC;
 
 namespace Clearance;
 
@@ -166,6 +167,15 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
     {
         if (ev.Player.IsPlayer) _joinedAt[ev.Player] = Now();
         FlushNotes();
+
+        // do not track is only set once authentication finishes, a moment after joining
+        var player = ev.Player;
+        if (cfg.DntConsentHint && player.IsPlayer)
+            Timing.CallDelayed(5f, () =>
+            {
+                if (player is { IsDestroyed: false, DoNotTrack: true, UserId.Length: > 0 } && !db.HasConsent(player.UserId))
+                    player.SendHint(cfg.DntConsentHintMessage, 15f);
+            });
     }
 
     private void OnLeft(PlayerLeftEventArgs ev)
@@ -195,8 +205,8 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
         if (string.IsNullOrWhiteSpace(id)) return;
 
         // do not track only arrives with authentication, after pre-auth already stored things.
-        // so the session is checked like everyone else's and wiped once they leave
-        if (player.DoNotTrack)
+        // so the session is checked like everyone else's and wiped once they leave, unless they opted in
+        if (player.DoNotTrack && !db.HasConsent(id))
         {
             if (db.GetLastSteam(id) is { } steam) _dntStore[steam.UserId] = steam;
             db.Forget(id);

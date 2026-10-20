@@ -18,6 +18,7 @@ public class Database : IDisposable
     private ILiteCollection<Sponsorship> Sponsorships => _db.GetCollection<Sponsorship>("sponsorships", BsonAutoId.Int32);
     private ILiteCollection<Punishment> Punishments => _db.GetCollection<Punishment>("punishments", BsonAutoId.Int32);
     private ILiteCollection<Strike> Strikes => _db.GetCollection<Strike>("strikes", BsonAutoId.Int32);
+    private ILiteCollection<TrackingConsent> Consents => _db.GetCollection<TrackingConsent>("consents");
 
     public string Folder { get; }
 
@@ -78,6 +79,19 @@ public class Database : IDisposable
         Players.Delete(id);
         Steam.Delete(id);
         Decisions.DeleteMany(x => x.UserId == id);
+    }
+
+    public void GiveConsent(string userId) =>
+        Consents.Upsert(new TrackingConsent { UserId = Norm(userId), GivenAt = Now() });
+
+    public bool HasConsent(string userId) => Consents.FindById(Norm(userId)) is not null;
+
+    // withdrawing also deletes what was tracked under the consent
+    public bool WithdrawConsent(string userId)
+    {
+        if (!Consents.Delete(Norm(userId))) return false;
+        Forget(userId);
+        return true;
     }
 
     // ---- steam cache ----
