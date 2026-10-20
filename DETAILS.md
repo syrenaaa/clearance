@@ -65,10 +65,10 @@ years ago is -15, 3 years -7.5, 4 years -3.75.
 
 - **`@steam`** ids get the full score
 - **`@discord`** ids have no steam data, but discord ids are snowflakes and the
-  account creation time is inside the id. so they get account age points and
-  the new-account penalty, like a steam account with everything else hidden.
-  there's no extra penalty for using discord: the community server guidelines
-  (8.6) forbid treating discord logins differently from steam
+  account creation time is inside the id. so they get account age points and the
+  new-account penalty, like a steam account with everything else hidden. there's
+  no extra penalty for using discord: the community server guidelines (8.6)
+  forbid treating discord logins differently from steam
 - **`@northwood`** ids are northwood staff and always get in, no score
 - **anything else** is scored like a private profile. put them on the allowlist
   if u need them in
@@ -128,12 +128,13 @@ number of a player who is on the server.
 
 the defaults are a starting point. to fit them to your players:
 
-1. run with `Enforce` off for a week or two. every join is still scored and logged
+1. run with `Enforce` off for a week or two. every join is still scored and
+   logged
 2. `clearance stats` re-scores everyone clearance has steam data for with the
    current config, and shows how many would be allowed, flagged and denied, and
    how many of each were banned on your server later
-3. change the config, reload, run `clearance stats` again and compare. good rules
-   put the banned players in deny and keep everyone else out of it
+3. change the config, reload, run `clearance stats` again and compare. good
+   rules put the banned players in deny and keep everyone else out of it
 4. `clearance export` writes the same data to a csv if you want a spreadsheet
 
 players without a steam lookup (discord ids, do not track players) aren't in
@@ -156,8 +157,8 @@ webhooks) and clearance posts there:
 steam ids link to the steam profile. posts never ping anyone, even if a reason
 contains `@everyone`.
 
-posting happens in the background, so joins never wait on discord. if discord
-is down or rate limits, posts are retried a bit and then dropped, and the server
+posting happens in the background, so joins never wait on discord. if discord is
+down or rate limits, posts are retried a bit and then dropped, and the server
 log says so once.
 
 do not track is only known after the check, so a denied or flagged player's id
@@ -204,6 +205,3 @@ using do not track, so they can opt in instead (8.3.2):
 - `.trackme` saves a consent record (user id + time, in `consents`) as proof.
   from then on they're tracked like everyone else
 - `.untrackme` deletes the consent record and their tracked data
-
-there's no "rejoin means consent": the guidelines want explicit, demonstrable
-consent, and players are kicked before the game reports do not track anyway.

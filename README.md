@@ -2,8 +2,8 @@
 
 a steam-based trust scoring plugin for scp:sl servers (labapi).
 
-the plugin defaults in **log-only mode**: every join is scored and logged, but nobody is
-kicked until you turn `Enforce` on.
+the plugin defaults in **log-only mode**: every join is scored and logged, but
+nobody is kicked until you turn `Enforce` on.
 
 ## how it works
 
@@ -13,7 +13,8 @@ steam account:
 
 - **points** for scp:sl hours, account age, steam level, library size, and time
   played on your server
-- **penalties** for private profiles, brand new accounts and vac / game bans (old bans fade, recent ones are an instant deny)
+- **penalties** for private profiles, brand new accounts and vac / game bans
+  (old bans fade, recent ones are an instant deny)
 
 a high score gets in, a middle score gets in but staff get a broadcast, and a
 low score is rejected. if steam is down, the last lookup is used, or the player
@@ -34,8 +35,8 @@ players with **do not track** on are still checked, but their tracking data is
 deleted when they leave. they get a hint that `.trackme` lets their play time
 count, if they want.
 
-you can read more details in [DETAILS.md](DETAILS.md),
-and all the config option is specified in [CONFIG.md](CONFIG.md).
+you can read more details in [DETAILS.md](DETAILS.md), and all the config option
+is specified in [CONFIG.md](CONFIG.md).
 
 ## install
 

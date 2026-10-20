@@ -1,6 +1,7 @@
 # clearance config
 
-every option in `config.yml`. how they fit together is in [DETAILS.md](DETAILS.md).
+every option in `config.yml`. how they fit together is in
+[DETAILS.md](DETAILS.md).
 
 ## general
 
