@@ -7,8 +7,9 @@ everything about how clearance decides. the short version is in
 
 when a player connects, clearance checks these in order:
 
-1. **northwood staff**: `@northwood` ids and anyone central auth marks as
-   northwood staff, always let in
+1. **bypass**: `@northwood` ids, and anyone whose auth token has the northwood
+   staff, ignore bans or ignore whitelist flag, always get in. the community
+   server guidelines (7.1.1, 7.2.1) require plugins to respect these
 2. **allowlist**: staff override, always let in
 3. **active sponsor**: they have a sponsor, let in
 4. **score**: ask steam (or use the cached answer), calculate a score, decide

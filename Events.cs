@@ -54,10 +54,13 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
 
         try
         {
-            // northwood staff (global moderators etc.). both the id and the flag come from central auth
-            if (UserIds.IsNorthwood(id) || (ev.Flags & CentralAuthPreauthFlags.NorthwoodStaff) != 0)
+            // CSG 7.1.1 / 7.2.1: plugins must respect bypass flags and northwood staff get past any
+            // restriction. both the id and the flags come from central auth, so they can't be faked
+            const CentralAuthPreauthFlags bypass =
+                CentralAuthPreauthFlags.NorthwoodStaff | CentralAuthPreauthFlags.IgnoreBans | CentralAuthPreauthFlags.IgnoreWhitelist;
+            if (UserIds.IsNorthwood(id) || (ev.Flags & bypass) != 0)
             {
-                db.LogDecision(id, 0, "Northwood", null, false);
+                db.LogDecision(id, 0, "Bypass", (ev.Flags & bypass).ToString(), false);
                 db.RecordJoin(id);
                 return;
             }
