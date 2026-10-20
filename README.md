@@ -46,7 +46,7 @@ every part gives points up to a cap. sum, round, and floor at 0.
 
 **penalties:**
 
-- **private profile**: `-PrivateProfilePenalty` (15). hours, level and library
+- **private profile**: `-PrivateProfilePenalty` (5). hours, level and library
   are all hidden, so only the server-time part can score
 - **new account**: `-NewAccountPenalty` (10) if the account is younger than
   `NewAccountDays` (30)
@@ -96,7 +96,7 @@ years ago is -15, 3 years -7.5, 4 years -3.75.
 | `GamesPerPoint`         | `4`     | games owned per library point            |
 | `LibraryCap`            | `15`    | max points from library                  |
 | `ServerHoursCap`        | `30`    | max points from time on your server      |
-| `PrivateProfilePenalty` | `15`    | private profile                          |
+| `PrivateProfilePenalty` | `5`     | private profile                          |
 | `DiscordPenalty`        | `10`    | discord accounts                         |
 | `NewAccountDays`        | `30`    | accounts younger than this count as new  |
 | `NewAccountPenalty`     | `10`    | new account                              |
@@ -104,7 +104,7 @@ years ago is -15, 3 years -7.5, 4 years -3.75.
 | `RecentBanDays`         | `365`   | bans newer than this are an instant deny |
 | `BanHalfLifeDays`       | `365`   | older bans: penalty halves this often    |
 | `AllowScore`            | `50`    | this score or more = allow               |
-| `FlagScore`             | `30`    | this score or more = flag, below = deny  |
+| `FlagScore`             | `20`    | this score or more = flag, below = deny  |
 
 **sponsors**
 
@@ -172,6 +172,23 @@ number of a player who is on the server.
 | `clearance unallow <id>`        | `LongTermBanning`           | remove them from the allowlist                                  |
 | `clearance revoke <guest id>`   | `LongTermBanning`           | end a guest's sponsorship                                       |
 | `clearance pardon <ban number>` | `LongTermBanning`           | pardon a ban (number from `check`), undoes the sponsor's strike |
+| `clearance stats`               | `PlayerSensitiveDataAccess` | how the current config scores known players, see tuning         |
+| `clearance export`              | `PlayerSensitiveDataAccess` | same as stats, one row per player in a csv next to the database |
+
+## tuning
+
+the defaults are a starting point. to fit them to your players:
+
+1. run with `Enforce` off for a week or two. every join is still scored and logged
+2. `clearance stats` re-scores everyone clearance has steam data for with the
+   current config, and shows how many would be allowed, flagged and denied, and
+   how many of each were banned on your server later
+3. change the config, reload, run `clearance stats` again and compare. good rules
+   put the banned players in deny and keep everyone else out of it
+4. `clearance export` writes the same data to a csv if you want a spreadsheet
+
+players without a steam lookup (discord ids, do not track players) aren't in
+stats or export.
 
 ## database
 

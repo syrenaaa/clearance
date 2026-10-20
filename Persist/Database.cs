@@ -19,10 +19,12 @@ public class Database : IDisposable
     private ILiteCollection<Punishment> Punishments => _db.GetCollection<Punishment>("punishments", BsonAutoId.Int32);
     private ILiteCollection<Strike> Strikes => _db.GetCollection<Strike>("strikes", BsonAutoId.Int32);
 
+    public string Folder { get; }
+
     public Database(string path)
     {
-        if (Path.GetDirectoryName(path) is { Length: > 0 } dir)
-            Directory.CreateDirectory(dir);
+        Folder = Path.GetDirectoryName(Path.GetFullPath(path));
+        Directory.CreateDirectory(Folder);
 
         _db = new LiteDatabase(path);
 
@@ -125,6 +127,21 @@ public class Database : IDisposable
             q = q.Where(x => x.UserId == id);
         }
         return q.OrderByDescending(x => x.Id).Limit(limit).ToList();
+    }
+
+    public Dictionary<string, int> CountOutcomesSince(long since) =>
+        Decisions.Find(x => x.At >= since).GroupBy(x => x.Outcome).ToDictionary(g => g.Key, g => g.Count());
+
+    // ---- tuning ----
+
+    // what scoring needs, per player with a steam lookup: the lookup, time here, and unpardoned bans here
+    public List<(SteamSnapshot Steam, long ServerSeconds, int Bans)> GetScoringData()
+    {
+        var seconds = Players.FindAll().ToDictionary(x => x.UserId, x => x.ServerSeconds);
+        var bans = Punishments.Find(x => x.PardonedAt == 0).GroupBy(x => x.UserId).ToDictionary(g => g.Key, g => g.Count());
+        return Steam.FindAll()
+            .Select(s => (s, seconds.TryGetValue(s.UserId, out var t) ? t : 0, bans.TryGetValue(s.UserId, out var b) ? b : 0))
+            .ToList();
     }
 
     // ---- sponsorships ----

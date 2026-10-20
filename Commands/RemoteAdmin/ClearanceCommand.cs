@@ -18,7 +18,7 @@ public class ClearanceCommand : ParentCommand
 
     protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
     {
-        response = "usage: clearance <check|allow|unallow|allowlist|revoke|pardon>";
+        response = "usage: clearance <check|allow|unallow|allowlist|revoke|pardon|stats|export>";
         return false;
     }
 }

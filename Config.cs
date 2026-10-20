@@ -24,7 +24,7 @@ public class ClearanceConfig
     public int ServerHoursCap { get; set; } = 30;   // 1 point per hour played on this server
 
     // penalties
-    public int PrivateProfilePenalty { get; set; } = 15;
+    public int PrivateProfilePenalty { get; set; } = 5;
     public int DiscordPenalty { get; set; } = 10;   // @discord ids: no steam data, only account age
     public int NewAccountDays { get; set; } = 30;
     public int NewAccountPenalty { get; set; } = 10;
@@ -34,7 +34,7 @@ public class ClearanceConfig
 
     // tiers: >=AllowScore => pass, FlagScore..AllowScore => flag staff, <FlagScore => deny
     public int AllowScore { get; set; } = 50;
-    public int FlagScore { get; set; } = 30;
+    public int FlagScore { get; set; } = 20;
 
     // sponsors
     public int SponsorWindowDays { get; set; } = 30;
