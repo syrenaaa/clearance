@@ -1,225 +1,38 @@
 # clearance
 
-a steam-based trust scoring system for scp:sl servers
+a steam-based trust scoring plugin for scp:sl servers (labapi). it keeps fresh
+alts and banned accounts out, while letting real players vouch for friends.
 
-it starts in **log-only mode**, so it won't do anything until you turn `Enforce`
-on.
+the plugin defaults in **log-only mode**: every join is scored and logged, but nobody is
+kicked until you turn `Enforce` on.
 
 ## how it works
 
-when a player connects, clearance checks these things:
+when someone joins, clearance lets them in if staff allowlisted them or a
+player is sponsoring them. otherwise it scores their steam account:
 
-1. **allowlist**: staff override, always let in
-2. **active sponsor**: they have a sponsor, let in
-3. **score**: ask steam (or use the cached answer), calculate a score, decide
+- **points** for scp:sl hours, account age, steam level, library size, and time
+  played on your server
+- **penalties** for private profiles, brand new accounts, discord accounts and
+  vac / game bans (old bans fade, recent ones are an instant deny)
 
-the score decides one of three things:
+a high score gets in, a middle score gets in but staff get a broadcast, and a
+low score is rejected. if steam is down, the last lookup is used, or the player
+is let in.
 
-| score                       | verdict | what happens                                           |
-| --------------------------- | ------- | ------------------------------------------------------ |
-| `AllowScore` or more        | allow   | you can join the server normally.                      |
-| `FlagScore` to `AllowScore` | flag    | you can join, but staff with RA access get a broadcast |
-| below `FlagScore`           | deny    | rejected with a message (only if `Enforce` is on)      |
+**sponsors:** players with some time on the server can sponsor a guest with
+`.sponsor <id>`. if the guest gets banned within the sponsorship window, the
+sponsor gets a strike, and too many strikes means no more sponsoring.
 
-every decision gets saved in the database with a breakdown of the points so you
-can see why someone was denied.
+**staff** manage the allowlist, sponsorships and pardons with
+`clearance <subcommand>` in RA, and can see how the current config would score
+known players with `clearance stats`.
 
-if steam is down or times out:
+players with **do not track** on are still checked, but their tracking data is
+deleted when they leave.
 
-1. if the player was looked up before, the old cached data is used, no matter
-   how old
-2. if not, and they never joined before, `AllowNewWhenSteamIsDown` decides
-   (`false` = reject them with `SteamDownKickMessage`)
-3. otherwise they're let in by default (`AllowWhenSteamIsDown`)
-
-## score calculation
-
-every part gives points up to a cap. sum, round, and floor at 0.
-
-| part                | formula                       | default cap |
-| ------------------- | ----------------------------- | ----------- |
-| scp:sl hours        | `HoursWeight * sqrt(hours)`   | 40          |
-| account age         | `PointsPerYear * years`       | 25          |
-| steam level         | 1 point per level             | 20          |
-| library size        | `games owned / GamesPerPoint` | 15          |
-| time on this server | 1 point per hour              | 30          |
-
-**penalties:**
-
-- **private profile**: `-PrivateProfilePenalty` (5). hours, level and library
-  are all hidden, so only the server-time part can score
-- **new account**: `-NewAccountPenalty` (10) if the account is younger than
-  `NewAccountDays` (30)
-- **vac / game ban**: `-BanPenalty` (30), fading for old bans (see below)
-- **discord account**: `-DiscordPenalty` (10), see below
-
-**instant deny:** a vac or game ban newer than `RecentBanDays` (365) is an
-instant deny, no matter the score. a ban with an unknown date counts as recent
-too.
-
-older bans don't deny, and their penalty fades: it halves every
-`BanHalfLifeDays` (365) after `RecentBanDays`. with the defaults a ban from 2
-years ago is -15, 3 years -7.5, 4 years -3.75.
-
-### discord and other ids
-
-- **`@steam`** ids get the full score
-- **`@discord`** ids have no steam data, but discord ids are snowflakes and the
-  account creation time is inside the id. so they get account age points, the
-  new-account penalty, and `-DiscordPenalty`. no hours, level or library
-- **anything else** (like `@northwood`) is scored like a private profile. put
-  them on the allowlist if u need them in
-
-## config
-
-**general**
-
-| option                    | default  | what it does                                            |
-| ------------------------- | -------- | ------------------------------------------------------- |
-| `Enforce`                 | `false`  | `false` = log only, nobody is kicked                    |
-| `SteamApiKey`             | `""`     | get one at https://steamcommunity.com/dev/apikey        |
-| `ScpslAppId`              | `700330` | steam app id used to find scp:sl hours                  |
-| `SteamCacheHours`         | `12`     | how long to reuse a steam lookup                        |
-| `SteamTimeoutSeconds`     | `5`      | how long a join waits for steam. keep this low          |
-| `AllowWhenSteamIsDown`    | `true`   | let players in if the steam lookup fails                |
-| `AllowNewWhenSteamIsDown` | `true`   | `false` = reject first-time players while steam is down |
-
-**score**
-
-| option                  | default | what it does                             |
-| ----------------------- | ------- | ---------------------------------------- |
-| `HoursWeight`           | `4`     | multiplier on `sqrt(hours)`              |
-| `HoursCap`              | `40`    | max points from hours                    |
-| `PointsPerYear`         | `5`     | account age points per year              |
-| `AgeCap`                | `25`    | max points from age                      |
-| `LevelCap`              | `20`    | max points from steam level              |
-| `GamesPerPoint`         | `4`     | games owned per library point            |
-| `LibraryCap`            | `15`    | max points from library                  |
-| `ServerHoursCap`        | `30`    | max points from time on your server      |
-| `PrivateProfilePenalty` | `5`     | private profile                          |
-| `DiscordPenalty`        | `10`    | discord accounts                         |
-| `NewAccountDays`        | `30`    | accounts younger than this count as new  |
-| `NewAccountPenalty`     | `10`    | new account                              |
-| `BanPenalty`            | `30`    | any vac / game ban                       |
-| `RecentBanDays`         | `365`   | bans newer than this are an instant deny |
-| `BanHalfLifeDays`       | `365`   | older bans: penalty halves this often    |
-| `AllowScore`            | `50`    | this score or more = allow               |
-| `FlagScore`             | `20`    | this score or more = flag, below = deny  |
-
-**sponsors**
-
-| option              | default | what it does                                  |
-| ------------------- | ------- | --------------------------------------------- |
-| `SponsorWindowDays` | `30`    | how long a sponsorship lasts                  |
-| `SponsorMinHours`   | `5`     | hours played here before you can sponsor      |
-| `MaxActiveGuests`   | `3`     | guests one sponsor can have at once           |
-| `MaxStrikeWeight`   | `3`     | sponsors at or over this can't sponsor anyone |
-| `StrikeDecayDays`   | `30`    | strikes stop counting after this long         |
-
-**messages**
-
-| option                 | default                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| `KickMessage`          | `clearance denied (score {score}, need {needed}). {breakdown}`                       |
-| `BanKickMessage`       | `clearance denied: your steam account has a recent VAC or game ban.`                 |
-| `SteamDownKickMessage` | `steam is not responding and we can't check new players right now. try again later.` |
-
-`{score}`, `{needed}` and `{breakdown}` are templates and get filled in.
-
-## sponsors
-
-a trusted player can sponsor a guest. while the sponsorship is active
-(`SponsorWindowDays`), the guest skips scoring and gets in.
-
-if the guest gets **banned** during that window, the sponsor gets a strike. the
-strike weight is the severity of the punishment (bans are 2). once a sponsor's
-active strikes add up to `MaxStrikeWeight`, they can't sponsor anyone until the
-old strikes decay or get pardoned.
-
-rules for sponsoring:
-
-- not yourself
-- you can't sponsor anyone while u are someone else's guest
-- you need `SponsorMinHours` played on this server (counted when you leave, so
-  the current session doesn't count yet)
-- you need free slots (`MaxActiveGuests`)
-- you need to be under the strike limit
-- the guest can't already have a sponsor
-
-revoking a sponsorship stops future strikes. punishments after a revoke don't
-count.
-
-## commands
-
-ids can be a full user id (`76561198000000000@steam`), a bare steam64 id, or the
-number of a player who is on the server.
-
-**players** (in the `~` console)
-
-| command           | what it does                            |
-| ----------------- | --------------------------------------- |
-| `.sponsor <id>`   | sponsor a guest                         |
-| `.unsponsor <id>` | stop sponsoring them                    |
-| `.guests`         | who you're sponsoring, and your strikes |
-
-**staff** (in RA or the server console, `cl` works as a short form)
-
-| command                         | permission                  | what it does                                                    |
-| ------------------------------- | --------------------------- | --------------------------------------------------------------- |
-| `clearance check <id>`          | `PlayerSensitiveDataAccess` | allowlist, sponsor, guests, strikes, bans, recent checks        |
-| `clearance allowlist`           | `PlayerSensitiveDataAccess` | list the allowlist                                              |
-| `clearance allow <id> [reason]` | `LongTermBanning`           | let them skip the check                                         |
-| `clearance unallow <id>`        | `LongTermBanning`           | remove them from the allowlist                                  |
-| `clearance revoke <guest id>`   | `LongTermBanning`           | end a guest's sponsorship                                       |
-| `clearance pardon <ban number>` | `LongTermBanning`           | pardon a ban (number from `check`), undoes the sponsor's strike |
-| `clearance stats`               | `PlayerSensitiveDataAccess` | how the current config scores known players, see tuning         |
-| `clearance export`              | `PlayerSensitiveDataAccess` | same as stats, one row per player in a csv next to the database |
-
-## tuning
-
-the defaults are a starting point. to fit them to your players:
-
-1. run with `Enforce` off for a week or two. every join is still scored and logged
-2. `clearance stats` re-scores everyone clearance has steam data for with the
-   current config, and shows how many would be allowed, flagged and denied, and
-   how many of each were banned on your server later
-3. change the config, reload, run `clearance stats` again and compare. good rules
-   put the banned players in deny and keep everyone else out of it
-4. `clearance export` writes the same data to a csv if you want a spreadsheet
-
-players without a steam lookup (discord ids, do not track players) aren't in
-stats or export.
-
-## database
-
-clearance uses [LiteDB](https://www.litedb.org/).
-
-the file is `clearance.db` in
-`<appdata>/SCP Secret Laboratory/LabAPI/configs/<port>/Clearance/`. user ids are
-trimmed and lowercased before they're stored. times are unix seconds, and `0`
-means "not set" for `RevokedAt` / `PardonedAt`.
-
-| collection     | contents                                                                                                        |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| `players`      | first seen, last seen, join count, total seconds played on this server                                          |
-| `steam`        | cached steam lookup: public or not, scp:sl minutes, level, games owned, account created, ban info, fetched time |
-| `allowlist`    | staff overrides: user id, who added it, reason                                                                  |
-| `decisions`    | log of every check: user, score, outcome, breakdown, and whether it was actually enforced                       |
-| `sponsorships` | sponsor, guest, created, expires, revoked                                                                       |
-| `punishments`  | bans: user, severity, reason, issued by, pardoned                                                               |
-| `strikes`      | sponsor, guest, which sponsorship and punishment caused it, weight, pardoned                                    |
-
-### do not track
-
-players with do not track on are still checked when they join, but when they
-leave their `players`, `steam` and `decisions` entries are deleted. the game
-only tells the server about do not track after pre-auth, so the data exists
-while they're online. `allowlist`, `sponsorships`, `punishments` and `strikes`
-are kept, those are moderation.
-
-their steam lookup is kept in memory only (for `SteamCacheHours`, gone on
-restart), so rejoining over and over can't use up the steam api key. do not
-track players never earn points for time on the server.
+you can read more details in [DETAILS.md](DETAILS.md),
+and all the config option is specified in [CONFIG.md](CONFIG.md).
 
 ## install
 
@@ -227,9 +40,9 @@ track players never earn points for time on the server.
 2. put `Clearance.dll` in `LabAPI/plugins/<port>/`
 3. put `LiteDB.dll` in `LabAPI/dependencies/<port>/`
 4. start the server once so it makes `config.yml`
-5. set `SteamApiKey`, restart, recommended to set `Enforce` false for a while
-6. check the logs and the `decisions` collection, tune the numbers, then turn
-   `Enforce` on
+5. set `SteamApiKey` and restart
+6. leave `Enforce` off for a week or two, tune with `clearance stats` (see
+   [tuning](DETAILS.md#tuning)), then turn `Enforce` on
 
 ## todos
 
