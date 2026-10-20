@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Clearance.Discord;
 using Clearance.Persist;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Events.Handlers;
@@ -12,7 +13,7 @@ using LabApi.Features.Wrappers;
 
 namespace Clearance;
 
-internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
+internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook? discord)
 {
     private const int BanSeverity = 2;
 
@@ -21,6 +22,9 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
     private readonly ConcurrentDictionary<string, SteamSnapshot> _dntStore = new();
 
     private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    // for other threads (the discord loop): printed on the next join/leave
+    public void Note(string text) => _notes.Enqueue((text, false));
 
     public void Register()
     {
@@ -90,6 +94,8 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
                             {
                                 db.LogDecision(id, 0, "SteamDownNew", null, cfg.Enforce);
                                 _notes.Enqueue(($"Clearance: {id} is new and steam is down{(cfg.Enforce ? " [rejected]" : "")}", false));
+                                discord?.Post(cfg.Enforce ? "rejected: steam is down" : "would be rejected: steam is down",
+                                    $"{Webhook.Link(id)} is new and couldn't be checked", cfg.Enforce ? Webhook.Red : Webhook.Orange);
                                 if (cfg.Enforce)
                                 {
                                     ev.RejectCustom(cfg.SteamDownKickMessage);
@@ -120,8 +126,14 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
             db.LogDecision(id, score, verdict.ToString(), breakdown, enforced);
 
             if (verdict != Verdict.Allow)
+            {
                 _notes.Enqueue(($"Clearance: {id} {verdict} (score {score}: {breakdown}){(enforced ? " [rejected]" : "")}",
                                 verdict == Verdict.Flag));
+                discord?.Post(
+                    verdict == Verdict.Flag ? "flagged" : enforced ? "rejected" : "would be rejected (log-only)",
+                    $"{Webhook.Link(id)}\nscore {score}: {breakdown}",
+                    verdict == Verdict.Flag || !enforced ? Webhook.Orange : Webhook.Red);
+            }
 
             if (enforced)
             {
@@ -156,8 +168,11 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg)
         if (string.IsNullOrWhiteSpace(ev.PlayerId)) return;
         var issuer = ev.Issuer?.UserId is { Length: > 0 } who ? who : "console";
         var (_, strike) = db.RecordPunishment(ev.PlayerId, BanSeverity, ev.Reason, issuer);
-        if (strike is not null)
-            Logger.Info($"Clearance: {ev.PlayerId} was banned, sponsor {strike.SponsorId} got a strike.");
+        if (strike is null) return;
+        Logger.Info($"Clearance: {ev.PlayerId} was banned, sponsor {strike.SponsorId} got a strike.");
+        discord?.Post("sponsor strike",
+            $"{Webhook.Link(strike.SponsorId)} got a strike because their guest {Webhook.Link(ev.PlayerId)} was banned by {issuer}",
+            Webhook.Red);
     }
 
     private void SaveTime(Player player)

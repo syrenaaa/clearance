@@ -1,4 +1,5 @@
 using System;
+using Clearance.Discord;
 using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
@@ -18,6 +19,7 @@ public class UnallowCommand : ICommand
 
         var ok = db.RemoveFromAllowlist(id);
         response = ok ? $"{id} is off the allowlist." : $"{id} wasn't allowlisted.";
+        if (ok) Cmd.Discord?.Post("removed from allowlist", $"{Webhook.Link(id)} by {Cmd.Who(sender)}", Webhook.Grey);
         return ok;
     }
 }

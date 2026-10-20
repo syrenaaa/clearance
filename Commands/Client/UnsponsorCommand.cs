@@ -1,4 +1,5 @@
 using System;
+using Clearance.Discord;
 using CommandSystem;
 using LabApi.Features.Wrappers;
 
@@ -23,6 +24,7 @@ public class UnsponsorCommand : ICommand
 
         var ok = db.RevokeSponsorship(me.UserId, guest);
         response = ok ? $"you're no longer sponsoring {guest}." : $"you aren't sponsoring {guest}.";
+        if (ok) Cmd.Discord?.Post("sponsorship ended", $"{Webhook.Link(me.UserId)} stopped sponsoring {Webhook.Link(guest)}", Webhook.Grey);
         return ok;
     }
 }

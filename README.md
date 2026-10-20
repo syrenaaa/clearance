@@ -27,6 +27,9 @@ sponsor gets a strike, and too many strikes means no more sponsoring.
 `clearance <subcommand>` in RA, and can see how the current config would score
 known players with `clearance stats`.
 
+set `DiscordWebhookUrl` and denies, flags, strikes and staff actions get posted
+to a **discord** channel.
+
 players with **do not track** on are still checked, but their tracking data is
 deleted when they leave.
 
@@ -45,4 +48,5 @@ and all the config option is specified in [CONFIG.md](CONFIG.md).
 
 ## todos
 
-- [ ] discord integration
+- [x] discord webhook
+- [ ] discord slash commands (check a score, sponsor, ...)

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Clearance.Discord;
 using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
@@ -23,6 +24,7 @@ public class PardonCommand : ICommand
 
         var strikes = db.PardonPunishment(punishmentId);
         response = strikes < 0 ? $"there's no ban #{punishmentId}." : $"pardoned ban #{punishmentId}, removed {strikes} strike(s).";
+        if (strikes >= 0) Cmd.Discord?.Post("ban pardoned", $"ban #{punishmentId} by {Cmd.Who(sender)}, {strikes} strike(s) removed", Webhook.Green);
         return strikes >= 0;
     }
 }

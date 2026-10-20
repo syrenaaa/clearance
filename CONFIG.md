@@ -14,6 +14,12 @@ every option in `config.yml`. how they fit together is in [DETAILS.md](DETAILS.m
 | `AllowWhenSteamIsDown`    | `true`   | let players in if the steam lookup fails                |
 | `AllowNewWhenSteamIsDown` | `true`   | `false` = reject first-time players while steam is down |
 
+## discord
+
+| option              | default | what it does                                                                |
+| ------------------- | ------- | --------------------------------------------------------------------------- |
+| `DiscordWebhookUrl` | `""`    | channel webhook to post to (see [discord](DETAILS.md#discord)). empty = off |
+
 ## score
 
 | option                  | default | what it does                             |

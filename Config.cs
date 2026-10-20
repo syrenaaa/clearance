@@ -43,6 +43,9 @@ public class ClearanceConfig
     public int MaxStrikeWeight { get; set; } = 3;
     public int StrikeDecayDays { get; set; } = 30;
 
+    // discord: webhook url from the channel's integrations settings. empty = off
+    public string DiscordWebhookUrl { get; set; } = "";
+
     // kick messages. {score} {needed} {breakdown} are templates
     public string KickMessage { get; set; } = "clearance denied (score {score}, need {needed}). {breakdown}";
     public string BanKickMessage { get; set; } = "clearance denied: your steam account has a recent VAC or game ban.";

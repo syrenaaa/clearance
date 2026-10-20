@@ -1,4 +1,5 @@
 using System;
+using Clearance.Discord;
 using CommandSystem;
 using LabApi.Features.Wrappers;
 
@@ -28,6 +29,7 @@ public class SponsorCommand : ICommand
         response = ok
             ? $"you're sponsoring {guest} for {cfg.SponsorWindowDays} days. if they get banned in that time, you get a strike."
             : error!;
+        if (ok) Cmd.Discord?.Post("new sponsorship", $"{Webhook.Link(me.UserId)} is sponsoring {Webhook.Link(guest)} for {cfg.SponsorWindowDays} days", Webhook.Blue);
         return ok;
     }
 }

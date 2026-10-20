@@ -132,6 +132,30 @@ the defaults are a starting point. to fit them to your players:
 players without a steam lookup (discord ids, do not track players) aren't in
 stats or export.
 
+## discord
+
+set `DiscordWebhookUrl` to a channel webhook (channel settings, integrations,
+webhooks) and clearance posts there:
+
+| post                         | when                                                     |
+| ---------------------------- | -------------------------------------------------------- |
+| rejected / would be rejected | a player is denied (or would be, in log-only mode)       |
+| flagged                      | a player gets in with a middle score                     |
+| rejected: steam is down      | a new player is turned away by `AllowNewWhenSteamIsDown` |
+| sponsor strike               | a guest was banned and their sponsor got a strike        |
+| sponsorships                 | `.sponsor`, `.unsponsor`, `clearance revoke`             |
+| allowlist / pardons          | `clearance allow`, `unallow`, `pardon`                   |
+
+steam ids link to the steam profile. posts never ping anyone, even if a reason
+contains `@everyone`.
+
+posting happens in the background, so joins never wait on discord. if discord
+is down or rate limits, posts are retried a bit and then dropped, and the server
+log says so once.
+
+do not track is only known after the check, so a denied or flagged player's id
+is posted even if they have do not track on.
+
 ## database
 
 clearance uses [LiteDB](https://www.litedb.org/).

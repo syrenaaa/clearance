@@ -1,4 +1,5 @@
 using System;
+using Clearance.Discord;
 using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
@@ -22,6 +23,7 @@ public class AllowCommand : ICommand
 
         db.AddToAllowlist(id, Cmd.Who(sender), reason);
         response = $"{id} is allowlisted.";
+        Cmd.Discord?.Post("allowlisted", $"{Webhook.Link(id)} by {Cmd.Who(sender)}{(reason is null ? "" : ": " + reason)}", Webhook.Green);
         return true;
     }
 }

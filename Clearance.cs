@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Clearance.Discord;
 using Clearance.Persist;
 using LabApi.Features;
 using LabApi.Features.Console;
@@ -19,6 +20,7 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
     // commands are created by the game, so they reach the db through here
     internal static ClearancePlugin? Instance { get; private set; }
     internal Database? Db => _db;
+    internal Webhook? Discord { get; private set; }
 
     private Database? _db;
     private ClearanceEvents? _events;
@@ -30,7 +32,10 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
             "SCP Secret Laboratory", "LabAPI", "configs", Server.Port.ToString(), "Clearance");
         _db = new Database(Path.Combine(dir, "clearance.db"));
 
-        _events = new ClearanceEvents(_db, Config!);
+        if (Config!.DiscordWebhookUrl.Length > 0)
+            Discord = new Webhook(Config.DiscordWebhookUrl, text => _events?.Note(text));
+
+        _events = new ClearanceEvents(_db, Config, Discord);
         _events.Register();
         Instance = this;
         
@@ -45,6 +50,9 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
         Instance = null;
         _events?.Unregister(); // saves play time as well
         _events = null;
+
+        Discord?.Dispose();
+        Discord = null;
 
         _db?.Dispose();
         _db = null;

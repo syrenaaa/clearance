@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Clearance.Discord;
 using Clearance.Persist;
 using CommandSystem;
 using LabApi.Features.Wrappers;
@@ -8,6 +9,9 @@ namespace Clearance.Commands;
 
 internal static class Cmd
 {
+    // null when no webhook is set
+    public static Webhook? Discord => ClearancePlugin.Instance?.Discord;
+
     public static bool Ready(out Database db, out ClearanceConfig cfg, out string response)
     {
         if (ClearancePlugin.Instance is { Db: { } d, Config: { } c })

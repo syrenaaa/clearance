@@ -1,4 +1,5 @@
 using System;
+using Clearance.Discord;
 using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
@@ -22,6 +23,7 @@ public class RevokeCommand : ICommand
             return false;
         }
         response = $"revoked {s.SponsorId}'s sponsorship of {guest}.";
+        Cmd.Discord?.Post("sponsorship revoked", $"{Webhook.Link(s.SponsorId)}'s sponsorship of {Webhook.Link(guest)}, by {Cmd.Who(sender)}", Webhook.Grey);
         return true;
     }
 }
