@@ -7,8 +7,9 @@ kicked until you turn `Enforce` on.
 
 ## how it works
 
-when someone joins, clearance lets them in if staff allowlisted them or a
-player is sponsoring them. otherwise it scores their steam account:
+when someone joins, clearance lets them in if they're northwood staff, staff
+allowlisted them, or a player is sponsoring them. otherwise it scores their
+steam account:
 
 - **points** for scp:sl hours, account age, steam level, library size, and time
   played on your server

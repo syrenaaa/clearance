@@ -7,9 +7,11 @@ everything about how clearance decides. the short version is in
 
 when a player connects, clearance checks these in order:
 
-1. **allowlist**: staff override, always let in
-2. **active sponsor**: they have a sponsor, let in
-3. **score**: ask steam (or use the cached answer), calculate a score, decide
+1. **northwood staff**: `@northwood` ids and anyone central auth marks as
+   northwood staff, always let in
+2. **allowlist**: staff override, always let in
+3. **active sponsor**: they have a sponsor, let in
+4. **score**: ask steam (or use the cached answer), calculate a score, decide
 
 the score decides one of three things:
 
@@ -65,8 +67,9 @@ years ago is -15, 3 years -7.5, 4 years -3.75.
 - **`@discord`** ids have no steam data, but discord ids are snowflakes and the
   account creation time is inside the id. so they get account age points, the
   new-account penalty, and `-DiscordPenalty`. no hours, level or library
-- **anything else** (like `@northwood`) is scored like a private profile. put
-  them on the allowlist if u need them in
+- **`@northwood`** ids are northwood staff and always get in, no score
+- **anything else** is scored like a private profile. put them on the allowlist
+  if u need them in
 
 ## sponsors
 

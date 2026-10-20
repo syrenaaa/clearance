@@ -54,6 +54,14 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
 
         try
         {
+            // northwood staff (global moderators etc.). both the id and the flag come from central auth
+            if (UserIds.IsNorthwood(id) || (ev.Flags & CentralAuthPreauthFlags.NorthwoodStaff) != 0)
+            {
+                db.LogDecision(id, 0, "Northwood", null, false);
+                db.RecordJoin(id);
+                return;
+            }
+
             if (db.IsAllowlisted(id))
             {
                 db.LogDecision(id, 0, "Allowlisted", null, false);

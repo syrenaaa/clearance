@@ -7,6 +7,8 @@ public static class UserIds
     private const long DiscordEpochMs = 1420070400000;
 
     public static bool IsSteam(string id) => id.EndsWith("@steam", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsNorthwood(string id) => id.EndsWith("@northwood", StringComparison.OrdinalIgnoreCase);
     
     // since discord ids are snowflakes we can get the creation date
     public static long? DiscordCreated(string id)
