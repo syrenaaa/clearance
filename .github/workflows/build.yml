@@ -1,0 +1,68 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # the 5 game assemblies Clearance.csproj references, zipped. the url is a secret (SL_REFS_URL),
+  # the hash pins the contents. re-upload + bump the hash after a game update
+  SL_REFS_SHA256: 37c2e5b2854a78e2751c586860b780df6fbe88f56c15a6c40e4084b8bba6ac49
+  SL_REFERENCES: ${{ github.workspace }}/.sl/Managed # read by Clearance.csproj
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # game assemblies to compile against. a new upload means a new hash, so a new cache
+      - name: cache scp:sl assemblies
+        id: sl
+        uses: actions/cache@v4
+        with:
+          path: .sl/Managed
+          key: sl-refs-${{ env.SL_REFS_SHA256 }}
+
+      - name: download scp:sl assemblies
+        if: steps.sl.outputs.cache-hit != 'true'
+        env:
+          SL_REFS_URL: ${{ secrets.SL_REFS_URL }}
+        run: |
+          if [ -z "$SL_REFS_URL" ]; then
+            echo "::error::SL_REFS_URL secret is missing (forks and dependabot PRs don't get secrets)"
+            exit 1
+          fi
+          curl -fsSL "$SL_REFS_URL" -o "$RUNNER_TEMP/refs.zip"
+          echo "$SL_REFS_SHA256  $RUNNER_TEMP/refs.zip" | sha256sum -c -
+          mkdir -p .sl/Managed
+          unzip -q "$RUNNER_TEMP/refs.zip" -d .sl/Managed
+
+      - name: cache nuget packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: build
+        run: dotnet build Clearance.csproj -c Release
+
+      # what goes on the server: the plugin + its one dependency (see README install)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clearance-${{ github.sha }}
+          path: |
+            bin/Release/net48/Clearance.dll
+            bin/Release/net48/LiteDB.dll
+          if-no-files-found: error
