@@ -111,7 +111,7 @@ number of a player who is on the server.
 | `.trackme`        | do not track players: save my play time anyway     |
 | `.untrackme`      | take back `.trackme` and delete my saved play time |
 
-**staff** (in RA or the server console, `cl` works as a short form)
+**staff** (in RA or the server console, `clr` works as a short form)
 
 | command                         | permission                  | what it does                                                    |
 | ------------------------------- | --------------------------- | --------------------------------------------------------------- |

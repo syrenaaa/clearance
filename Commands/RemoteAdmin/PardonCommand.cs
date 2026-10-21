@@ -5,6 +5,7 @@ using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
 
+[CommandHandler(typeof(ClearanceCommand))]
 public class PardonCommand : ICommand
 {
     public string Command => "pardon";

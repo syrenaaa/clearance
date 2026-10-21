@@ -10,22 +10,11 @@ namespace Clearance.Commands.RemoteAdmin;
 public class ClearanceCommand : ParentCommand
 {
     public override string Command => "clearance";
-    public override string[] Aliases => ["cl"];
+    public override string[] Aliases => ["clr"]; // not "cl": vanilla clearbroadcast has it, and the clash leaves us without subcommands
     public override string Description => "clearance staff commands";
 
-    // LabAPI's loader doesn't attach [CommandHandler(typeof(ClearanceCommand))] children (it tries to
-    // register "clearance" again instead), so they're listed here. add new subcommands to this list
-    public override void LoadGeneratedCommands()
-    {
-        RegisterCommand(new CheckCommand());
-        RegisterCommand(new AllowCommand());
-        RegisterCommand(new UnallowCommand());
-        RegisterCommand(new AllowlistCommand());
-        RegisterCommand(new RevokeCommand());
-        RegisterCommand(new PardonCommand());
-        RegisterCommand(new StatsCommand());
-        RegisterCommand(new ExportCommand());
-    }
+    // LabAPI attaches [CommandHandler(typeof(ClearanceCommand))] children itself; nothing calls this
+    public override void LoadGeneratedCommands() { }
 
     protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
     {

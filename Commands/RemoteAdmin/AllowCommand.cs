@@ -4,6 +4,7 @@ using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
 
+[CommandHandler(typeof(ClearanceCommand))]
 public class AllowCommand : ICommand
 {
     public string Command => "allow";

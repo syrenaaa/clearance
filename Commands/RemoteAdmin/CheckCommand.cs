@@ -5,6 +5,7 @@ using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
 
+[CommandHandler(typeof(ClearanceCommand))]
 public class CheckCommand : ICommand
 {
     public string Command => "check";

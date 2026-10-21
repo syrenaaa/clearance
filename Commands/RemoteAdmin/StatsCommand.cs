@@ -9,6 +9,7 @@ namespace Clearance.Commands.RemoteAdmin;
 
 // for tuning: re-scores everyone clearance has steam data for with the *current* config,
 // and shows how many of each verdict later got banned here
+[CommandHandler(typeof(ClearanceCommand))]
 public class StatsCommand : ICommand
 {
     public string Command => "stats";
