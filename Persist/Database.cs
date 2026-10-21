@@ -27,6 +27,16 @@ public class Database : IDisposable
         Folder = Path.GetDirectoryName(Path.GetFullPath(path));
         Directory.CreateDirectory(Folder);
 
+        // LiteDB caches a type's mapper before filling it in, so two threads touching a type for the first
+        // time can see it half built ("Member X not found"). build them all now, while only one thread runs
+        foreach (var t in new[]
+                 {
+                     typeof(PlayerRecord), typeof(SteamSnapshot), typeof(AllowlistEntry), typeof(DecisionEntry),
+                     typeof(Sponsorship), typeof(Punishment), typeof(Strike), typeof(TrackingConsent),
+                     typeof(OutboxItem), typeof(Meta),
+                 })
+            BsonMapper.Global.ToDocument(t, Activator.CreateInstance(t));
+
         _db = new LiteDatabase(path);
 
         Decisions.EnsureIndex(x => x.UserId);
