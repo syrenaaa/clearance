@@ -7,7 +7,6 @@ using CommandSystem;
 namespace Clearance.Commands.RemoteAdmin;
 
 // same data as stats, one row per player, for a spreadsheet
-[CommandHandler(typeof(ClearanceCommand))]
 public class ExportCommand : ICommand
 {
     public string Command => "export";

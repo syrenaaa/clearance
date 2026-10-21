@@ -4,7 +4,6 @@ using CommandSystem;
 
 namespace Clearance.Commands.RemoteAdmin;
 
-[CommandHandler(typeof(ClearanceCommand))]
 public class RevokeCommand : ICommand
 {
     public string Command => "revoke";
