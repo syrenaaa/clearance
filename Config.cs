@@ -56,7 +56,8 @@ public class ClearanceConfig
     public int CentralTimeoutSeconds { get; set; } = 3; // runs next to the steam lookup, not after it
     public bool ShareBans { get; set; } = true;
     public int ShareMinBanHours { get; set; } = 24;     // shorter bans stay local
-    public bool ShareStats { get; set; } = true;
+    public bool ShareStats { get; set; } = false;     // opt in
+    public int NetworkMinServers { get; set; } = 2;     // one server alone doesn't count
     public int NetworkBanPenalty { get; set; } = 10;    // per server with a running ban for them
     public int NetworkBanCap { get; set; } = 30;
 

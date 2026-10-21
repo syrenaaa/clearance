@@ -74,7 +74,7 @@ public static class Score
         }
 
         // facts from other servers, weighed by this server's config. never a deny on its own
-        if (networkServers > 0) Add("network bans", -Math.Min(cfg.NetworkBanCap, cfg.NetworkBanPenalty * networkServers));
+        if (networkServers >= Math.Max(1, cfg.NetworkMinServers)) Add("network bans", -Math.Min(cfg.NetworkBanCap, cfg.NetworkBanPenalty * networkServers));
 
         var score = Math.Max(0, (int)Math.Round(total));
         return (score, instantDeny, parts.Count == 0 ? "no points" : string.Join(", ", parts));

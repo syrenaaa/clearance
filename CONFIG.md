@@ -33,7 +33,8 @@ see [central server](DETAILS.md#central-server).
 | `CentralTimeoutSeconds` | `3`                            | how long a join waits for the network lookup (next to steam's)   |
 | `ShareBans`             | `true`                         | report bans + pardons                                            |
 | `ShareMinBanHours`      | `24`                           | shorter bans stay local                                          |
-| `ShareStats`            | `true`                         | upload anonymous daily counts                                    |
+| `ShareStats`            | `false`                        | upload anonymous daily counts (opt in)                           |
+| `NetworkMinServers`     | `2`                            | servers that need a running ban for the player before it counts  |
 | `NetworkBanPenalty`     | `10`                           | penalty per server with a running ban for the player             |
 | `NetworkBanCap`         | `30`                           | max network penalty                                              |
 
