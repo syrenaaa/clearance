@@ -164,6 +164,41 @@ log says so once.
 do not track is only known after the check, so a denied or flagged player's id
 is posted even if they have do not track on.
 
+## central server
+
+set `CentralKey` and clearance talks to a shared central server
+([clearance-central](https://github.com/syrenaaa/clearance-central)). it does
+two things:
+
+**ban sharing.** bans of at least `ShareMinBanHours` are reported with the user
+id, time, length, severity and category (always `other` for now, game bans only
+come with free text). pardoning one with `clearance pardon` reports the pardon.
+the reason, the issuer and the player's name are never sent.
+
+on join, the network lookup runs next to the steam lookup, so it doesn't add to
+the wait. it returns facts, not verdicts: how many servers have a running ban
+for the player. each server is a `-NetworkBanPenalty` in the score (up to
+`NetworkBanCap`), shown as `network bans` in the breakdown. it's never an
+instant deny on its own. if the central server is slow or down, the player is
+scored without it. answers are cached for 10 minutes.
+
+**daily stats.** once a utc day is over, its counts go up: how many checks ended
+in each outcome, scores in buckets of 10, how many of that day's bans had which
+score at their last check, plus `Enforce`, `AllowScore`, `FlagScore` and the
+plugin version. no user ids. the server drops days with fewer than 20 checks and
+only shows sums over days with at least 5 servers, so no single server can be
+picked out. missed days are caught up, up to a week back.
+
+reports and stats wait in the `outbox` collection and are sent one at a time,
+oldest first, from the background. joins never wait on them. if the central
+server is down they're retried with backoff (up to an hour apart), and a wrong
+`CentralKey` is retried hourly. the server log says once when it breaks and once
+when it works again.
+
+bans count as server security (CSG D.8), so they're shared for do not track
+players too. do not track players' decisions are deleted when they leave, so
+they mostly don't show up in the daily counts.
+
 ## database
 
 clearance uses [LiteDB](https://www.litedb.org/).
@@ -180,9 +215,11 @@ means "not set" for `RevokedAt` / `PardonedAt`.
 | `allowlist`    | staff overrides: user id, who added it, reason                                                                  |
 | `decisions`    | log of every check: user, score, outcome, breakdown, and whether it was actually enforced                       |
 | `sponsorships` | sponsor, guest, created, expires, revoked                                                                       |
-| `punishments`  | bans: user, severity, reason, issued by, pardoned                                                               |
+| `punishments`  | bans: user, severity, reason, issued by, pardoned, length, central report id                                    |
 | `strikes`      | sponsor, guest, which sponsorship and punishment caused it, weight, pardoned                                    |
 | `consents`     | do not track players who used `.trackme`: user id, when                                                         |
+| `outbox`       | reports + stats days waiting for the central server                                                             |
+| `meta`         | the install id (keeps central report ids unique if the db is reset), last stats day queued                      |
 
 ### do not track
 

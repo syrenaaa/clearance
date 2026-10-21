@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Clearance.Central;
 using Clearance.Discord;
 using Clearance.Persist;
 using CommandSystem;
@@ -11,6 +12,9 @@ internal static class Cmd
 {
     // null when no webhook is set
     public static Webhook? Discord => ClearancePlugin.Instance?.Discord;
+
+    // null when no CentralKey is set
+    public static Outbox? Outbox => ClearancePlugin.Instance?.Outbox;
 
     public static bool Ready(out Database db, out ClearanceConfig cfg, out string response)
     {

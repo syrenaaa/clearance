@@ -50,6 +50,16 @@ public class ClearanceConfig
     // discord: webhook url from the channel's integrations settings. empty = off
     public string DiscordWebhookUrl { get; set; } = "";
 
+    // central server: shared ban facts + anonymous daily stats. empty key = off
+    public string CentralUrl { get; set; } = "https://sl-clearance.val.run";
+    public string CentralKey { get; set; } = "";
+    public int CentralTimeoutSeconds { get; set; } = 3; // runs next to the steam lookup, not after it
+    public bool ShareBans { get; set; } = true;
+    public int ShareMinBanHours { get; set; } = 24;     // shorter bans stay local
+    public bool ShareStats { get; set; } = true;
+    public int NetworkBanPenalty { get; set; } = 10;    // per server with a running ban for them
+    public int NetworkBanCap { get; set; } = 30;
+
     // kick messages. {score} {needed} {breakdown} are templates
     public string KickMessage { get; set; } = "clearance denied (score {score}, need {needed}). {breakdown}";
     public string BanKickMessage { get; set; } = "clearance denied: your steam account has a recent VAC or game ban.";

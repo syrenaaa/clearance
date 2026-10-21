@@ -12,8 +12,10 @@ public static class Score
 
     // steam = null (lookup failed, or not a steam account) is treated like a private profile.
     // discordCreated: for @discord ids, account creation time from the snowflake (see UserIds).
+    // networkServers: servers on the central server with a running ban for them (0 = none, or unknown)
     public static (int Score, bool InstantDeny, string Breakdown) Compute(
-        ClearanceConfig cfg, SteamSnapshot? steam, long serverSeconds, long now, long? discordCreated = null)
+        ClearanceConfig cfg, SteamSnapshot? steam, long serverSeconds, long now, long? discordCreated = null,
+        int networkServers = 0)
     {
         List<string> parts = [];
         double total = 0;
@@ -70,6 +72,9 @@ public static class Score
                 Add("ban", -cfg.BanPenalty * Math.Pow(0.5, halvings));
             }
         }
+
+        // facts from other servers, weighed by this server's config. never a deny on its own
+        if (networkServers > 0) Add("network bans", -Math.Min(cfg.NetworkBanCap, cfg.NetworkBanPenalty * networkServers));
 
         var score = Math.Max(0, (int)Math.Round(total));
         return (score, instantDeny, parts.Count == 0 ? "no points" : string.Join(", ", parts));

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Clearance.Central;
 using Clearance.Discord;
 using Clearance.Persist;
 using LabApi.Features;
@@ -21,6 +22,7 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
     internal static ClearancePlugin? Instance { get; private set; }
     internal Database? Db => _db;
     internal Webhook? Discord { get; private set; }
+    internal Outbox? Outbox { get; private set; }
 
     private Database? _db;
     private ClearanceEvents? _events;
@@ -35,7 +37,14 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
         if (Config!.DiscordWebhookUrl.Length > 0)
             Discord = new Webhook(Config.DiscordWebhookUrl, text => _events?.Note(text));
 
-        _events = new ClearanceEvents(_db, Config, Discord);
+        CentralClient? central = null;
+        if (Config.CentralKey.Length > 0)
+        {
+            central = new CentralClient(Config.CentralUrl, Config.CentralKey, TimeSpan.FromSeconds(Config.CentralTimeoutSeconds));
+            Outbox = new Outbox(_db, Config, central, Version.ToString(3), text => _events?.Note(text));
+        }
+
+        _events = new ClearanceEvents(_db, Config, Discord, central, Outbox);
         _events.Register();
         Instance = this;
         
@@ -53,6 +62,9 @@ public class ClearancePlugin : Plugin<ClearanceConfig>
 
         Discord?.Dispose();
         Discord = null;
+
+        Outbox?.Dispose();
+        Outbox = null;
 
         _db?.Dispose();
         _db = null;

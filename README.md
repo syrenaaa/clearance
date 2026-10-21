@@ -24,6 +24,10 @@ is let in.
 `.sponsor <id>`. if the guest gets banned within the sponsorship window, the
 sponsor gets a strike, and too many strikes means no more sponsoring.
 
+**central server:** with a `CentralKey`, servers share bans and anonymous daily
+stats. players with running bans on other servers lose points (see
+[central server](DETAILS.md#central-server)).
+
 **staff** manage the allowlist, sponsorships and pardons with
 `clearance <subcommand>` in RA, and can see how the current config would score
 known players with `clearance stats`.
@@ -51,4 +55,5 @@ is specified in [CONFIG.md](CONFIG.md).
 ## todos
 
 - [x] discord webhook
+- [x] central server: shared bans + daily stats
 - [ ] discord slash commands (check a score, sponsor, ...)

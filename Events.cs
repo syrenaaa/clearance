@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Clearance.Central;
 using Clearance.Discord;
 using Clearance.Persist;
 using LabApi.Events.Arguments.PlayerEvents;
@@ -14,7 +15,7 @@ using MEC;
 
 namespace Clearance;
 
-internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook? discord)
+internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook? discord, CentralClient? central, Outbox? outbox)
 {
     private const int BanSeverity = 2;
 
@@ -80,6 +81,9 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
                 return;
             }
 
+            // in parallel with steam, so the join waits for the slower one, not both. fails open (null)
+            var network = central is null ? null : Task.Run(() => central.LookupAsync(id));
+
             SteamSnapshot? steam = null;
             if (UserIds.IsSteam(id)) // discord and other ids have nothing to look up
             {
@@ -131,8 +135,9 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
                 }
             }
 
+            var facts = network?.GetAwaiter().GetResult();
             var (score, instantDeny, breakdown) =
-                Score.Compute(cfg, steam, db.GetServerSeconds(id), Now(), UserIds.DiscordCreated(id));
+                Score.Compute(cfg, steam, db.GetServerSeconds(id), Now(), UserIds.DiscordCreated(id), facts?.DistinctServers ?? 0);
             var verdict = Score.Decide(cfg, score, instantDeny);
             var enforced = cfg.Enforce && verdict == Verdict.Deny;
             db.LogDecision(id, score, verdict.ToString(), breakdown, enforced);
@@ -188,7 +193,9 @@ internal sealed class ClearanceEvents(Database db, ClearanceConfig cfg, Webhook?
     {
         if (string.IsNullOrWhiteSpace(ev.PlayerId)) return;
         var issuer = ev.Issuer?.UserId is { Length: > 0 } who ? who : "console";
-        var (_, strike) = db.RecordPunishment(ev.PlayerId, BanSeverity, ev.Reason, issuer);
+        if (ev.Duration <= 0) return; // kicks go through here too, with no duration
+        var (punishment, strike) = db.RecordPunishment(ev.PlayerId, BanSeverity, ev.Reason, issuer, ev.Duration);
+        outbox?.Banned(punishment);
         if (strike is null) return;
         Logger.Info($"Clearance: {ev.PlayerId} was banned, sponsor {strike.SponsorId} got a strike.");
         discord?.Post("sponsor strike",

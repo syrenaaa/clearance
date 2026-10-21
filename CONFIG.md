@@ -22,6 +22,21 @@ every option in `config.yml`. how they fit together is in
 | ------------------- | ------- | --------------------------------------------------------------------------- |
 | `DiscordWebhookUrl` | `""`    | channel webhook to post to (see [discord](DETAILS.md#discord)). empty = off |
 
+## central server
+
+see [central server](DETAILS.md#central-server).
+
+| option                  | default                        | what it does                                                     |
+| ----------------------- | ------------------------------ | ---------------------------------------------------------------- |
+| `CentralUrl`            | `https://sl-clearance.val.run` | the central server                                               |
+| `CentralKey`            | `""`                           | this server's api key. empty = off, nothing is sent or looked up |
+| `CentralTimeoutSeconds` | `3`                            | how long a join waits for the network lookup (next to steam's)   |
+| `ShareBans`             | `true`                         | report bans + pardons                                            |
+| `ShareMinBanHours`      | `24`                           | shorter bans stay local                                          |
+| `ShareStats`            | `true`                         | upload anonymous daily counts                                    |
+| `NetworkBanPenalty`     | `10`                           | penalty per server with a running ban for the player             |
+| `NetworkBanCap`         | `30`                           | max network penalty                                              |
+
 ## score
 
 | option                  | default | what it does                             |

@@ -64,6 +64,25 @@ public class Punishment
     public string? Reason { get; set; }
     public string IssuedBy { get; set; } = "";
     public long PardonedAt { get; set; }
+    public long Duration { get; set; }          // seconds. 0 = unknown (bans from before this was saved)
+    public string? CentralReportId { get; set; } // set once the central server has it
+}
+
+// writes waiting for the central server, sent oldest first. the body is built at send time
+public class OutboxItem
+{
+    public int Id { get; set; }
+    public string Kind { get; set; } = "";      // "ban" / "pardon": Ref = punishment id. "stats": Ref = utc day
+    public string Ref { get; set; } = "";
+    public int Attempts { get; set; }
+    public long NextAt { get; set; }
+}
+
+// small key/value settings that live with the data, like the install id
+public class Meta
+{
+    [BsonId] public string Key { get; set; } = "";
+    public string Value { get; set; } = "";
 }
 
 // a do not track player's explicit opt-in (CSG 8.3.2). GivenAt is the proof

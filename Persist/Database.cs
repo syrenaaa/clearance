@@ -19,6 +19,8 @@ public class Database : IDisposable
     private ILiteCollection<Punishment> Punishments => _db.GetCollection<Punishment>("punishments", BsonAutoId.Int32);
     private ILiteCollection<Strike> Strikes => _db.GetCollection<Strike>("strikes", BsonAutoId.Int32);
     private ILiteCollection<TrackingConsent> Consents => _db.GetCollection<TrackingConsent>("consents");
+    private ILiteCollection<OutboxItem> Outbox => _db.GetCollection<OutboxItem>("outbox", BsonAutoId.Int32);
+    private ILiteCollection<Meta> Metas => _db.GetCollection<Meta>("meta");
 
     public string Folder { get; }
 
@@ -45,6 +47,8 @@ public class Database : IDisposable
         Punishments.EnsureIndex(x => x.UserId);
         Strikes.EnsureIndex(x => x.SponsorId);
         Strikes.EnsureIndex(x => x.PunishmentId);
+        Decisions.EnsureIndex(x => x.At);
+        Punishments.EnsureIndex(x => x.At);
     }
 
     // ---- players ----
@@ -238,7 +242,8 @@ public class Database : IDisposable
 
     // Record a confirmed ban (not a kick). If the player has an active sponsor, the sponsor gets a strike
     // with weight = severity. Keep punishment.Id if you want to pardon it later.
-    public (Punishment punishment, Strike? strike) RecordPunishment(string userId, int severity, string? reason, string issuedBy)
+    public (Punishment punishment, Strike? strike) RecordPunishment(string userId, int severity, string? reason, string issuedBy,
+        long duration = 0)
     {
         var id = Norm(userId);
         lock (_gate)
@@ -248,7 +253,7 @@ public class Database : IDisposable
             var punishment = new Punishment
             {
                 UserId = id, At = now, Severity = Math.Max(1, severity),
-                Reason = reason, IssuedBy = issuedBy
+                Reason = reason, IssuedBy = issuedBy, Duration = Math.Max(0, duration)
             };
             punishment.Id = Punishments.Insert(punishment).AsInt32;
 
@@ -299,6 +304,74 @@ public class Database : IDisposable
     // strikes that still count: not pardoned, not older than the decay
     public int GetActiveStrikeWeight(string sponsorId, TimeSpan decay) =>
         StrikeWeight(Norm(sponsorId), decay, Now());
+
+    public Punishment? GetPunishment(int punishmentId) => Punishments.FindById(punishmentId);
+
+    public void SetCentralReportId(int punishmentId, string reportId)
+    {
+        lock (_gate)
+        {
+            if (Punishments.FindById(punishmentId) is not { } p) return;
+            p.CentralReportId = reportId;
+            Punishments.Update(p);
+        }
+    }
+
+    // ---- daily stats (central server) ----
+
+    public List<DecisionEntry> GetDecisionsBetween(long from, long to) =>
+        Decisions.Find(x => x.At >= from && x.At < to).ToList();
+
+    public List<Punishment> GetPunishmentsBetween(long from, long to) =>
+        Punishments.Find(x => x.At >= from && x.At < to).ToList();
+
+    // the score at their last scored check before `before`, null if there's none (or it was forgotten)
+    public int? GetLastScore(string userId, long before, IReadOnlyCollection<string> scoredOutcomes)
+    {
+        var id = Norm(userId);
+        return Decisions.Find(x => x.UserId == id && x.At <= before)
+            .Where(x => scoredOutcomes.Contains(x.Outcome))
+            .OrderByDescending(x => x.Id)
+            .Select(x => (int?)x.Score)
+            .FirstOrDefault();
+    }
+
+    // ---- outbox (central server) ----
+
+    public void Enqueue(string kind, string reference) =>
+        Outbox.Insert(new OutboxItem { Kind = kind, Ref = reference });
+
+    public bool IsQueued(string kind, string reference) => Outbox.Exists(x => x.Kind == kind && x.Ref == reference);
+
+    // oldest first. the queue keeps order, so a pardon never goes out before its ban
+    public OutboxItem? PeekOutbox() => Outbox.Query().OrderBy(x => x.Id).FirstOrDefault();
+
+    public void Retry(OutboxItem item, long nextAt)
+    {
+        item.Attempts++;
+        item.NextAt = nextAt;
+        Outbox.Update(item);
+    }
+
+    public void Done(OutboxItem item) => Outbox.Delete(item.Id);
+
+    // ---- meta ----
+
+    public string? GetMeta(string key) => Metas.FindById(key)?.Value;
+
+    public void SetMeta(string key, string value) => Metas.Upsert(new Meta { Key = key, Value = value });
+
+    // random, made once per database. keeps central client refs unique even after the db is reset
+    public string InstallId()
+    {
+        lock (_gate)
+        {
+            if (GetMeta("install") is { } id) return id;
+            id = Guid.NewGuid().ToString("N");
+            SetMeta("install", id);
+            return id;
+        }
+    }
 
     // ---- helpers ----
 
